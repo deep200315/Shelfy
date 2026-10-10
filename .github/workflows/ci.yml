@@ -60,7 +60,7 @@ jobs:
       - name: Make DMG and zip
         run: scripts/make_dmg.sh
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: shelfy-build
           path: |
