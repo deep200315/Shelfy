@@ -1,3 +1,5 @@
+<p align="center"><img src="site/icon.png" width="112" alt="Shelfy icon"></p>
+
 # Shelfy
 
 A native macOS drag-and-drop shelf (SwiftUI + AppKit), inspired by Dropover.
