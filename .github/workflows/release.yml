@@ -1,0 +1,51 @@
+# Start a production release: cuts release/vX.Y.Z from develop, bumps version.env, moves the
+# changelog's "Unreleased" section under the new version, and opens the release PR into main.
+# The PR runs CI; merging it triggers "Deploy PROD".
+name: Start release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, e.g. 1.1.0 (semver: breaking → major, features → minor, fixes → patch)"
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write   # to start CI on the release branch
+
+jobs:
+  cut:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+      - name: Validate
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::'$VERSION' is not X.Y.Z"; exit 1; }
+          awk '/^## \[Unreleased\]/{f=1;next} /^## \[/{f=0} f && NF' CHANGELOG.md | grep -q . \
+            || { echo "::error::CHANGELOG.md has nothing under Unreleased"; exit 1; }
+      - name: Bump version and changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "release/v$VERSION"
+          echo "MARKETING_VERSION=$VERSION" > version.env
+          sed -i "s/^## \[Unreleased\]$/## [Unreleased]\n\n## [$VERSION] - $(date -u +%F)/" CHANGELOG.md
+          git commit -am "chore: release v$VERSION"
+          git push -u origin "release/v$VERSION"
+      - name: Open release PR
+        run: |
+          awk -v v="$VERSION" '$0 ~ "^## \\[" v "\\]"{f=1;next} /^## \[/{f=0} f' CHANGELOG.md > notes.md
+          gh pr create --base main --head "release/v$VERSION" \
+            --title "Release v$VERSION" \
+            --body "$(printf 'Promotes develop to production as **v%s**.\n\n### Changes\n%s\n\nMerging publishes the release (Deploy PROD).' "$VERSION" "$(cat notes.md)")"
+      - name: Run CI on the release branch
+        # PRs opened with GITHUB_TOKEN don't trigger pull_request workflows; a dispatch does,
+        # and its checks attach to the release commit shown on the PR.
+        run: gh workflow run ci.yml --ref "release/v$VERSION"

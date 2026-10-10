@@ -1,0 +1,87 @@
+# PROD environment: when a release or hotfix PR merges into main, publish vX.Y.Z
+# (version from version.env, notes from CHANGELOG.md), then open a PR syncing main back into develop.
+name: Deploy PROD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false   # never interrupt a production release
+
+jobs:
+  check:
+    name: Release gate
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.gate.outputs.version }}
+      release: ${{ steps.gate.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: gate
+        run: |
+          source version.env
+          echo "version=$MARKETING_VERSION" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/v$MARKETING_VERSION" >/dev/null; then
+            echo "v$MARKETING_VERSION is already released; nothing to deploy."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! grep -q "^## \[$MARKETING_VERSION\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## [$MARKETING_VERSION]' section"
+            exit 1
+          fi
+          echo "release=true" >> "$GITHUB_OUTPUT"
+
+  ci:
+    needs: check
+    if: needs.check.outputs.release == 'true'
+    uses: ./.github/workflows/ci.yml
+    with:
+      version: ${{ needs.check.outputs.version }}
+
+  deploy:
+    name: Publish PROD release
+    needs: [check, ci]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ needs.check.outputs.version }}
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: shelfy-build
+          path: dist
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" { on = 1; next }
+            on && /^## \[/ { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          printf '\n---\nFirst launch: right-click Shelfy.app → **Open** (free, ad-hoc signed build).\n' >> notes.md
+          cat notes.md
+      - name: Tag and publish
+        run: |
+          gh release create "v$VERSION" dist/Shelfy-*.dmg dist/Shelfy-*.zip \
+            --target "$GITHUB_SHA" \
+            --title "Shelfy $VERSION" \
+            --notes-file notes.md \
+            --latest
+      - name: Open back-merge PR (main → develop)
+        run: |
+          gh pr create --base develop --head main \
+            --title "Sync main into develop after v$VERSION" \
+            --body "Automatic back-merge so develop contains the v$VERSION release commit (version bump, changelog, any hotfixes)." \
+            || echo "Nothing to sync, or a sync PR is already open."
