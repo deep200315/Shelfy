@@ -53,8 +53,6 @@ jobs:
       url: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ needs.check.outputs.version }}
     permissions:
       contents: write
-      pull-requests: write
-      actions: write   # to start CI on the back-merge PR
     env:
       GH_TOKEN: ${{ github.token }}
       VERSION: ${{ needs.check.outputs.version }}
@@ -82,12 +80,34 @@ jobs:
             --title "Shelfy $VERSION" \
             --notes-file notes.md \
             --latest
+
+  sync:
+    name: Sync main back into develop
+    # Runs after every push to main (releases and version-less hotfixes alike), once any release has finished.
+    needs: [check, deploy]
+    if: always() && needs.check.result == 'success' && needs.deploy.result != 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: write   # to start CI on the sync PR
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Open back-merge PR (main → develop)
         run: |
-          gh pr create --base develop --head main \
-            --title "Sync main into develop after v$VERSION" \
-            --body "Automatic back-merge so develop contains the v$VERSION release commit (version bump, changelog, any hotfixes)." \
-            || echo "Nothing to sync, or a sync PR is already open."
+          ahead=$(git rev-list --count origin/develop..origin/main)
+          if [ "$ahead" -eq 0 ]; then echo "develop already contains main."; exit 0; fi
+          if gh pr list --base develop --head main --state open --json number -q '.[0].number' | grep -q .; then
+            echo "A sync PR is already open."
+          else
+            gh pr create --base develop --head main \
+              --title "Sync main into develop" \
+              --body "Automatic back-merge: main has $ahead commit(s) that develop doesn't (release commit or hotfix)."
+          fi
           # PRs opened with GITHUB_TOKEN don't trigger pull_request workflows, and develop requires
           # CI to pass; dispatching CI on main attaches the check to the PR's head commit.
           gh workflow run ci.yml --ref main
