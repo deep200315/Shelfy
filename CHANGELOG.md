@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Shelfy uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+
+## [1.0.1] - 2026-10-10
 ### Fixed
 - Shelfy now appears under Productivity in the Apps view instead of only in search
 
