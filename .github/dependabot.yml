@@ -2,6 +2,7 @@ version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
+    target-branch: develop   # updates flow feature → develop → main like every other change
     schedule:
       interval: weekly
     open-pull-requests-limit: 5

@@ -71,7 +71,7 @@ jobs:
             on && /^## \[/ { exit }
             on { print }
           ' CHANGELOG.md > notes.md
-          printf '\n---\nFirst launch: right-click Shelfy.app → **Open** (free, ad-hoc signed build).\n' >> notes.md
+          printf '\n---\n**Install:** open Shelfy.dmg and drag Shelfy into Applications. **First launch:** macOS blocks free builds that aren'"'"'t notarized; open Shelfy once, then go to System Settings → Privacy & Security → **Open Anyway**. Shelfy lives in the menu bar (no Dock icon).\n' >> notes.md
           cat notes.md
       - name: Tag and publish
         run: |
