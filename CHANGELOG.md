@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Shelfy uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+
+## [1.1.0] - 2026-10-10
 ### Added
 - One-command install and update: `curl -fsSL https://deep200315.github.io/Shelfy/install.sh | sh` (no "Open Anyway" step)
 ### Changed
