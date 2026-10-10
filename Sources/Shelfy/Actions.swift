@@ -93,7 +93,8 @@ enum Actions {
         let dir = ShelfStore.newItemDir()
         return urls.compactMap { src in
             guard let source = CGImageSourceCreateWithURL(src as CFURL, nil),
-                  let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
+                let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+            else { return nil }
             let ext = type.preferredFilenameExtension ?? "img"
             let out = uniqueURL(in: dir, name: src.deletingPathExtension().lastPathComponent + "." + ext)
             guard let dest = CGImageDestinationCreateWithURL(out as CFURL, type.identifier as CFString, 1, nil)
@@ -135,11 +136,17 @@ enum Actions {
     static func extractText(_ items: [ShelfItem]) -> String {
         var parts: [String] = []
         for item in items {
-            if item.kind == .text, let t = item.text { parts.append(t); continue }
+            if item.kind == .text, let t = item.text {
+                parts.append(t)
+                continue
+            }
             guard let url = item.fileURL, let type = item.contentType else { continue }
             if type.conforms(to: .pdf), let doc = PDFDocument(url: url) {
                 let s = doc.string ?? ""
-                if !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { parts.append(s); continue }
+                if !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    parts.append(s)
+                    continue
+                }
                 for i in 0..<min(doc.pageCount, 50) {
                     guard let page = doc.page(at: i) else { continue }
                     let bounds = page.bounds(for: .mediaBox)
@@ -147,8 +154,9 @@ enum Actions {
                     if let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) { parts.append(ocr(cg)) }
                 }
             } else if type.conforms(to: .image),
-                      let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-                      let cg = CGImageSourceCreateImageAtIndex(source, 0, nil) {
+                let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+                let cg = CGImageSourceCreateImageAtIndex(source, 0, nil)
+            {
                 parts.append(ocr(cg))
             } else if type.conforms(to: .text), let s = try? String(contentsOf: url, encoding: .utf8) {
                 parts.append(s)
@@ -205,7 +213,8 @@ enum Actions {
     static func refreshShortcuts() {
         queue.async {
             let out = run("/usr/bin/shortcuts", ["list"])
-            let names = out.status == 0
+            let names =
+                out.status == 0
                 ? out.output.split(separator: "\n").map(String.init).filter { !$0.isEmpty }.sorted()
                 : []
             DispatchQueue.main.async { shortcutNames = names }
@@ -226,11 +235,11 @@ enum Actions {
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             let example = dir.appendingPathComponent("Word Count.sh")
             let body = """
-            #!/bin/sh
-            # Shelfy custom action: receives the selected files as arguments.
-            # Output lines that are existing file paths are added to the shelf; anything else becomes a text item.
-            wc -w "$@"
-            """
+                #!/bin/sh
+                # Shelfy custom action: receives the selected files as arguments.
+                # Output lines that are existing file paths are added to the shelf; anything else becomes a text item.
+                wc -w "$@"
+                """
             try? body.write(to: example, atomically: true, encoding: .utf8)
             try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: example.path)
         }

@@ -1,0 +1,60 @@
+# DEV environment: every merge into develop publishes a rolling "Dev build" pre-release
+# that can be installed and tried before it is promoted to production.
+name: Deploy DEV
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true   # only the newest develop build matters
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: v
+        run: |
+          source version.env
+          echo "version=${MARKETING_VERSION}-dev.$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+
+  ci:
+    needs: version
+    uses: ./.github/workflows/ci.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+
+  deploy:
+    name: Publish DEV build
+    needs: [version, ci]
+    runs-on: ubuntu-latest
+    environment:
+      name: development
+      url: ${{ github.server_url }}/${{ github.repository }}/releases/tag/dev
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: shelfy-build
+      - name: Replace the rolling dev pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          gh release delete dev --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
+          gh release create dev Shelfy-*.dmg Shelfy-*.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Dev build $VERSION" \
+            --notes "Automatic build of \`develop\` at ${GITHUB_SHA::7}. Not for general use. Unreleased changes are listed under **Unreleased** in CHANGELOG.md.
+
+          First launch: right-click Shelfy.app → **Open** (the build is ad-hoc signed)."

@@ -54,8 +54,10 @@ struct ShelfItem: Identifiable, Codable, Hashable {
 enum ShelfColor {
     static let names = ["None", "Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Pink"]
     static let colors: [Color] = [.secondary, .red, .orange, .yellow, .green, .blue, .purple, .pink]
-    static let nsColors: [NSColor] = [.secondaryLabelColor, .systemRed, .systemOrange, .systemYellow,
-                                      .systemGreen, .systemBlue, .systemPurple, .systemPink]
+    static let nsColors: [NSColor] = [
+        .secondaryLabelColor, .systemRed, .systemOrange, .systemYellow,
+        .systemGreen, .systemBlue, .systemPurple, .systemPink,
+    ]
     static func color(_ i: Int) -> Color { colors.indices.contains(i) ? colors[i] : .secondary }
 }
 
@@ -96,19 +98,28 @@ final class Shelf: ObservableObject, Identifiable {
     weak var controller: ShelfWindowController?
 
     init(name: String = "") {
-        id = UUID(); created = Date()
-        self.name = name; colorIndex = 0; pinned = false; items = []
+        id = UUID()
+        created = Date()
+        self.name = name
+        colorIndex = 0
+        pinned = false
+        items = []
     }
 
     init(snapshot s: Snapshot) {
-        id = s.id; created = s.created
-        name = s.name; colorIndex = s.colorIndex; pinned = s.pinned; items = s.items
+        id = s.id
+        created = s.created
+        name = s.name
+        colorIndex = s.colorIndex
+        pinned = s.pinned
+        items = s.items
         frameString = s.frame
     }
 
     var snapshot: Snapshot {
-        Snapshot(id: id, name: name, colorIndex: colorIndex, pinned: pinned, items: items,
-                 created: created, frame: frameString)
+        Snapshot(
+            id: id, name: name, colorIndex: colorIndex, pinned: pinned, items: items,
+            created: created, frame: frameString)
     }
 
     var title: String { name.isEmpty ? "Shelf" : name }
@@ -184,7 +195,10 @@ final class ShelfStore: ObservableObject {
     private let maxRecent = 20
 
     static let supportDir: URL = {
-        let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        // SHELFY_SUPPORT_DIR lets tests use a scratch location instead of the user's data.
+        let url =
+            ProcessInfo.processInfo.environment["SHELFY_SUPPORT_DIR"].map { URL(fileURLWithPath: $0, isDirectory: true) }
+            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Shelfy", isDirectory: true)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
@@ -203,7 +217,8 @@ final class ShelfStore: ObservableObject {
         let root = itemsDir.standardizedFileURL.path
         for item in items where item.owned {
             guard let dir = item.fileURL?.deletingLastPathComponent().standardizedFileURL,
-                  dir.path.hasPrefix(root), dir.path != root else { continue }
+                dir.path.hasPrefix(root), dir.path != root
+            else { continue }
             try? FileManager.default.removeItem(at: dir)
         }
     }
@@ -295,9 +310,10 @@ final class ShelfStore: ObservableObject {
     }
 
     func save() {
-        let state = Persisted(open: openShelves.filter { !isClipboard($0) }.map(\.snapshot),
-                              recent: recentShelves.map(\.snapshot),
-                              clipboard: clipboardShelf.snapshot)
+        let state = Persisted(
+            open: openShelves.filter { !isClipboard($0) }.map(\.snapshot),
+            recent: recentShelves.map(\.snapshot),
+            clipboard: clipboardShelf.snapshot)
         if let data = try? JSONEncoder().encode(state) {
             try? data.write(to: Self.stateURL, options: .atomic)
         }
@@ -306,13 +322,18 @@ final class ShelfStore: ObservableObject {
     func load() {
         clipboardShelf.store = self
         guard let data = try? Data(contentsOf: Self.stateURL),
-              let state = try? JSONDecoder().decode(Persisted.self, from: data) else { return }
+            let state = try? JSONDecoder().decode(Persisted.self, from: data)
+        else { return }
         if let snap = state.clipboard {
             clipboardShelf = Shelf(snapshot: snap)
             clipboardShelf.pinned = true
         }
         clipboardShelf.store = self
-        recentShelves = state.recent.map { let s = Shelf(snapshot: $0); s.store = self; return s }
+        recentShelves = state.recent.map {
+            let s = Shelf(snapshot: $0)
+            s.store = self
+            return s
+        }
         for snap in state.open {
             let shelf = Shelf(snapshot: snap)
             if shelf.items.isEmpty && !shelf.pinned { continue }

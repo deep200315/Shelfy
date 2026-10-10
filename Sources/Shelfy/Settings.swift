@@ -61,8 +61,10 @@ struct SettingsView: View {
                         .foregroundStyle(.tint)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Shelfy").font(.headline)
-                        Text("Shake the pointer while dragging, press ⌃⌥D, or drop onto the menu bar icon or notch to open a shelf.")
-                            .font(.callout).foregroundStyle(.secondary)
+                        Text(
+                            "Shake the pointer while dragging, press ⌃⌥D, or drop onto the menu bar icon or notch to open a shelf."
+                        )
+                        .font(.callout).foregroundStyle(.secondary)
                     }
                 }
                 .padding(.vertical, 4)
@@ -93,8 +95,12 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: settings.dropSound) { Feedback.preview() }
-                    Button { Feedback.preview() } label: { Image(systemName: "play.fill") }
-                        .help("Preview")
+                    Button {
+                        Feedback.preview()
+                    } label: {
+                        Image(systemName: "play.fill")
+                    }
+                    .help("Preview")
                 }
                 .disabled(!settings.dropFeedback)
                 LabeledContent("Volume") {
@@ -107,8 +113,11 @@ struct SettingsView: View {
                     }
                 }
                 .disabled(!settings.dropFeedback)
-                Toggle("Launch at login", isOn: Binding(get: { settings.launchAtLogin },
-                                                        set: { settings.launchAtLogin = $0 }))
+                Toggle(
+                    "Launch at login",
+                    isOn: Binding(
+                        get: { settings.launchAtLogin },
+                        set: { settings.launchAtLogin = $0 }))
             }
 
             Section {
@@ -127,7 +136,9 @@ struct SettingsView: View {
                         Image(systemName: "folder")
                         Text((path as NSString).abbreviatingWithTildeInPath).lineLimit(1).truncationMode(.middle)
                         Spacer()
-                        Button { settings.watchedFolders.removeAll { $0 == path } } label: {
+                        Button {
+                            settings.watchedFolders.removeAll { $0 == path }
+                        } label: {
                             Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)

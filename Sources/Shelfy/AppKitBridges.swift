@@ -5,8 +5,10 @@ import SwiftUI
 final class ClosureMenuItem: NSMenuItem {
     private let handler: () -> Void
 
-    init(_ title: String, key: String = "", symbol: String? = nil, enabled: Bool = true,
-         handler: @escaping () -> Void) {
+    init(
+        _ title: String, key: String = "", symbol: String? = nil, enabled: Bool = true,
+        handler: @escaping () -> Void
+    ) {
         self.handler = handler
         super.init(title: title, action: #selector(fire), keyEquivalent: key)
         target = self
@@ -72,8 +74,9 @@ final class DragSourceView: NSView, NSDraggingSource {
             let di = NSDraggingItem(pasteboardWriter: writer)
             let image = Thumbnails.shared.image(for: item)
             let offset = CGFloat(min(index, 6)) * 4
-            di.setDraggingFrame(NSRect(x: origin.x - 28 + offset, y: origin.y - 28 - offset, width: 56, height: 56),
-                                contents: image)
+            di.setDraggingFrame(
+                NSRect(x: origin.x - 28 + offset, y: origin.y - 28 - offset, width: 56, height: 56),
+                contents: image)
             return di
         }
         let session = beginDraggingSession(with: draggingItems, event: down, source: self)
@@ -88,8 +91,10 @@ final class DragSourceView: NSView, NSDraggingSource {
 
     override func menu(for event: NSEvent) -> NSMenu? { menuProvider() }
 
-    func draggingSession(_ session: NSDraggingSession,
-                         sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+    func draggingSession(
+        _ session: NSDraggingSession,
+        sourceOperationMaskFor context: NSDraggingContext
+    ) -> NSDragOperation {
         context == .withinApplication ? [.copy, .generic] : [.copy, .move, .link, .generic]
     }
 
@@ -169,7 +174,10 @@ final class WindowDragView: NSView {
     var menuProvider: () -> NSMenu? = { nil }
 
     override func mouseDown(with event: NSEvent) {
-        if event.clickCount == 2 { onDoubleClick(); return }
+        if event.clickCount == 2 {
+            onDoubleClick()
+            return
+        }
         window?.performDrag(with: event)
     }
 
@@ -201,9 +209,11 @@ final class HoverTrackingView: NSView {
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         trackingAreas.forEach(removeTrackingArea)
-        addTrackingArea(NSTrackingArea(rect: .zero,
-                                       options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
-                                       owner: self, userInfo: nil))
+        addTrackingArea(
+            NSTrackingArea(
+                rect: .zero,
+                options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                owner: self, userInfo: nil))
     }
 
     override func mouseEntered(with event: NSEvent) { set(true) }

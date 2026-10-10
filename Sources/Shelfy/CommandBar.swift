@@ -56,8 +56,10 @@ final class CommandBarController: NSObject, NSWindowDelegate {
     }
 
     private init(entries: [CommandEntry]) {
-        panel = CommandBarPanel(contentRect: NSRect(x: 0, y: 0, width: 300 + 2 * ShelfContainerView.margin, height: 318 + 2 * ShelfContainerView.margin),
-                                styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel = CommandBarPanel(
+            contentRect: NSRect(
+                x: 0, y: 0, width: 300 + 2 * ShelfContainerView.margin, height: 318 + 2 * ShelfContainerView.margin),
+            styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         super.init()
         panel.level = .floating
         panel.backgroundColor = .clear
@@ -66,12 +68,13 @@ final class CommandBarController: NSObject, NSWindowDelegate {
         panel.isReleasedWhenClosed = false
         panel.delegate = self
 
-        let view = CommandBarView(entries: entries,
-                                  onRun: { [weak self] entry in
-                                      self?.close()
-                                      DispatchQueue.main.async { entry.run() }
-                                  },
-                                  onCancel: { [weak self] in self?.close() })
+        let view = CommandBarView(
+            entries: entries,
+            onRun: { [weak self] entry in
+                self?.close()
+                DispatchQueue.main.async { entry.run() }
+            },
+            onCancel: { [weak self] in self?.close() })
         let hosting = NSHostingView(rootView: view)
         hosting.sizingOptions = []
         let m = ShelfContainerView.margin
@@ -132,11 +135,22 @@ private struct CommandBarView: View {
                     .font(.system(size: 14))
                     .focused($focused)
                     .onSubmit { if let e = results[safe: selected] { onRun(e) } }
-                    .onKeyPress(.downArrow) { move(1); return .handled }
-                    .onKeyPress(.upArrow) { move(-1); return .handled }
-                    .onKeyPress(.escape) { onCancel(); return .handled }
+                    .onKeyPress(.downArrow) {
+                        move(1)
+                        return .handled
+                    }
+                    .onKeyPress(.upArrow) {
+                        move(-1)
+                        return .handled
+                    }
+                    .onKeyPress(.escape) {
+                        onCancel()
+                        return .handled
+                    }
                 if !query.isEmpty {
-                    Button { query = "" } label: {
+                    Button {
+                        query = ""
+                    } label: {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
