@@ -54,6 +54,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write   # to start CI on the back-merge PR
     env:
       GH_TOKEN: ${{ github.token }}
       VERSION: ${{ needs.check.outputs.version }}
@@ -85,3 +86,6 @@ jobs:
             --title "Sync main into develop after v$VERSION" \
             --body "Automatic back-merge so develop contains the v$VERSION release commit (version bump, changelog, any hotfixes)." \
             || echo "Nothing to sync, or a sync PR is already open."
+          # PRs opened with GITHUB_TOKEN don't trigger pull_request workflows, and develop requires
+          # CI to pass; dispatching CI on main attaches the check to the PR's head commit.
+          gh workflow run ci.yml --ref main
