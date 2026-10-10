@@ -195,7 +195,10 @@ final class ShelfStore: ObservableObject {
     private let maxRecent = 20
 
     static let supportDir: URL = {
-        let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        // SHELFY_SUPPORT_DIR lets tests use a scratch location instead of the user's data.
+        let url =
+            ProcessInfo.processInfo.environment["SHELFY_SUPPORT_DIR"].map { URL(fileURLWithPath: $0, isDirectory: true) }
+            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Shelfy", isDirectory: true)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
