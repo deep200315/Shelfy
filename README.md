@@ -7,7 +7,10 @@ A native macOS drag-and-drop shelf (SwiftUI + AppKit), inspired by Dropover.
 ## Install
 Website: **https://deep200315.github.io/Shelfy/**
 
-Download the latest **Shelfy-X.Y.Z.dmg** from GitHub Releases, drag Shelfy to Applications, then right-click → **Open** the first time (free, ad-hoc signed build).
+Download **Shelfy.dmg** from the [latest release](https://github.com/deep200315/Shelfy/releases/latest) and drag Shelfy into Applications.
+
+First launch: free builds aren't notarized by Apple, so macOS blocks Shelfy the first time. Open it once, then go to **System Settings → Privacy & Security** and click **Open Anyway**. (Or in Terminal: `xattr -dr com.apple.quarantine /Applications/Shelfy.app`.)
+Shelfy lives in the **menu bar** (tray icon, top right); it has no Dock icon or window.
 Want the newest work in progress? Grab the **Dev build** pre-release (built from `develop`).
 
 ## Build & run from source
