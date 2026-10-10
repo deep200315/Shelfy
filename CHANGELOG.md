@@ -6,6 +6,10 @@ and Shelfy uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-10
+### Fixed
+- Shelfy now appears under Productivity in the Apps view instead of only in search
+
 ## [1.0.0] - 2026-10-10
 ### Added
 - Floating shelves: shake the pointer while dragging, press ⌃⌥D, or drop onto the menu bar icon or MacBook notch
