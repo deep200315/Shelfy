@@ -17,3 +17,4 @@ and Shelfy uses [Semantic Versioning](https://semver.org/).
 - Clipboard history shelf (⌃⌥V) that skips password-manager content
 - Watched folders and automatic screenshot collection
 - Drop sound and haptic with a sound picker and volume
+- New indigo app icon: a stack of photos, like the shelf's own pile
