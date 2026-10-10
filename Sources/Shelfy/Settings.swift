@@ -56,9 +56,9 @@ struct SettingsView: View {
         Form {
             Section {
                 HStack(spacing: 12) {
-                    Image(systemName: "tray.and.arrow.down.fill")
-                        .font(.system(size: 28))
-                        .foregroundStyle(.tint)
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: 44, height: 44)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Shelfy").font(.headline)
                         Text(

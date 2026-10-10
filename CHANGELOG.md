@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and Shelfy uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+### Added
+- One-command install and update: `curl -fsSL https://deep200315.github.io/Shelfy/install.sh | sh` (no "Open Anyway" step)
+### Changed
+- Menu bar icon and Settings header use the new stacked-photos look instead of the old tray
 ### Fixed
 - Shelfy now appears under Productivity in the Apps view instead of only in search
 

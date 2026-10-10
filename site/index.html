@@ -180,11 +180,13 @@
     <div>
       <h1 class="display">drag less.<br>drop <span class="block">anywhere.</span></h1>
       <p class="lede">A free, open-source shelf for macOS. <b>Shake while dragging</b> and a Liquid Glass shelf appears under your pointer. Collect from anywhere, drop it all at once.</p>
+      <span class="label">install with one command</span>
+      <div class="code" style="margin: 8px 0 22px; max-width: 640px; white-space: nowrap"><button class="copy" type="button">copy</button><span class="p">$ </span>curl -fsSL https://deep200315.github.io/Shelfy/install.sh | sh</div>
       <div class="cta-row" id="download">
         <a class="btn" id="dl" href="https://github.com/deep200315/Shelfy/releases/latest/download/Shelfy.dmg">Download for Mac <span class="sub" id="dl-ver">.dmg</span></a>
         <a class="btn ghost" href="https://github.com/deep200315/Shelfy">View source</a>
       </div>
-      <p class="note">macOS 14 or later · Apple silicon &amp; Intel · lives in your menu bar · <a href="#install">first-launch steps</a></p>
+      <p class="note">macOS 14 or later · Apple silicon &amp; Intel · lives in your menu bar · the command skips the "Open Anyway" step · <a href="#install">downloaded the .dmg?</a></p>
     </div>
 
     <div class="stage" aria-hidden="true">
@@ -245,9 +247,11 @@
       <div class="outro-grid">
         <p>Download the app, or build it yourself: it's a plain Swift package with no dependencies. Every release is built, tested, and packaged in the open by GitHub Actions.</p>
         <div class="stack">
-          <span class="label">download</span>
+          <span class="label">install or update with one command</span>
+          <div class="code"><button class="copy" type="button">copy</button><span class="p">$ </span>curl -fsSL https://deep200315.github.io/Shelfy/install.sh | sh</div>
+          <span class="label">or download</span>
           <div class="cta-row"><a class="btn" href="https://github.com/deep200315/Shelfy/releases/latest/download/Shelfy.dmg">Download Shelfy.dmg</a></div>
-          <span class="label" id="install">first launch</span>
+          <span class="label" id="install">first launch after a .dmg download</span>
           <ol class="install-steps">
             <li>Open <b>Shelfy.dmg</b> and drag Shelfy into Applications.</li>
             <li>Open Shelfy. macOS blocks it the first time, because free builds aren't notarized by Apple.</li>

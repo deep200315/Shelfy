@@ -3,9 +3,12 @@ build/
 .swiftpm/
 *.xcodeproj/
 xcuserdata/
+temp_auto_push.bat
 DerivedData/
 .DS_Store
 *.p8
 *.p12
 *.cer
 *.mobileprovision
+.gitignore
+branch_structure.json
