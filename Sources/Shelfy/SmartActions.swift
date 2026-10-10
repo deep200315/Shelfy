@@ -1,5 +1,5 @@
-import AppKit
 import AVFoundation
+import AppKit
 import ImageIO
 import PDFKit
 import UniformTypeIdentifiers
@@ -33,9 +33,12 @@ extension Actions {
         }
         let width = vertical ? CGFloat(side) : sizes.reduce(0) { $0 + $1.width }
         let height = vertical ? sizes.reduce(0) { $0 + $1.height } : CGFloat(side)
-        guard let ctx = CGContext(data: nil, width: Int(width), height: Int(height), bitsPerComponent: 8,
-                                  bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
-                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        guard
+            let ctx = CGContext(
+                data: nil, width: Int(width), height: Int(height), bitsPerComponent: 8,
+                bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
         ctx.interpolationQuality = .high
         var cursor: CGFloat = vertical ? height : 0
         for (img, size) in Swift.zip(images, sizes) {
@@ -133,7 +136,7 @@ extension Actions {
             if session.status == .completed, size > 0, size < (best?.size ?? originalSize) {
                 if let old = best { try? FileManager.default.removeItem(at: old.url) }
                 best = (out, size)
-                if size < originalSize / 2 { break }   // good enough; skip the lower-quality presets
+                if size < originalSize / 2 { break }  // good enough; skip the lower-quality presets
             } else {
                 try? FileManager.default.removeItem(at: out)
             }
@@ -151,7 +154,10 @@ extension Actions {
         (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
     }
 
-    private final class Box<T>: @unchecked Sendable { var value: T; init(_ v: T) { value = v } }
+    private final class Box<T>: @unchecked Sendable {
+        var value: T
+        init(_ v: T) { value = v }
+    }
 
     /// Blocking duration load; only called from the background actions queue.
     private static func loadDuration(_ asset: AVURLAsset) -> Double {

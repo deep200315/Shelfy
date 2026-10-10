@@ -86,8 +86,10 @@ final class ShelfContainerView: NSView {
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         trackingAreas.forEach(removeTrackingArea)
-        addTrackingArea(NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
-                                       owner: self, userInfo: nil))
+        addTrackingArea(
+            NSTrackingArea(
+                rect: bounds, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                owner: self, userInfo: nil))
     }
 
     override func mouseEntered(with event: NSEvent) { controller?.pointerEntered() }
@@ -101,14 +103,17 @@ final class ShelfContainerView: NSView {
     private func insertionIndex(_ sender: NSDraggingInfo) -> Int? {
         guard shelf.expanded else { return nil }
         let point = hosting.convert(sender.draggingLocation, from: nil)
-        let yFromTop = hosting.isFlipped ? point.y : hosting.bounds.height - point.y   // SwiftUI global space is top-left
+        let yFromTop = hosting.isFlipped ? point.y : hosting.bounds.height - point.y  // SwiftUI global space is top-left
         return shelf.items.firstIndex { (shelf.rowFrames[$0.id]?.midY ?? .infinity) > yFromTop } ?? shelf.items.count
     }
 
     private func operation(for sender: NSDraggingInfo) -> NSDragOperation {
         if isFromThisShelf(sender) {
             // Dragging within the shelf reorders, but only in the detail list.
-            guard shelf.expanded else { shelf.dropIndex = nil; return [] }
+            guard shelf.expanded else {
+                shelf.dropIndex = nil
+                return []
+            }
             shelf.dropIndex = insertionIndex(sender)
             return .generic
         }
@@ -181,9 +186,10 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
 
     init(shelf: Shelf) {
         self.shelf = shelf
-        let panel = ShelfPanel(contentRect: NSRect(origin: .zero, size: Self.compactSize),
-                               styleMask: [.borderless, .nonactivatingPanel],
-                               backing: .buffered, defer: false)
+        let panel = ShelfPanel(
+            contentRect: NSRect(origin: .zero, size: Self.compactSize),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered, defer: false)
         panel.isFloatingPanel = true
         panel.level = .floating
         panel.hidesOnDeactivate = false
@@ -230,16 +236,18 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
             f.origin.y = max(f.origin.y, vf.minY + 8)
         }
         animating = true
-        NSAnimationContext.runAnimationGroup({ ctx in
-            ctx.duration = 0.28
-            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.2, 0.9, 0.25, 1)
-            panel.animator().setFrame(f, display: true)
-        }, completionHandler: { [weak self] in
-            guard let self else { return }
-            self.animating = false
-            self.shelf.frameString = NSStringFromRect(self.panel.frame)
-            if self.dockEdge != nil { self.slide(out: !self.panel.frame.contains(NSEvent.mouseLocation)) }
-        })
+        NSAnimationContext.runAnimationGroup(
+            { ctx in
+                ctx.duration = 0.28
+                ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.2, 0.9, 0.25, 1)
+                panel.animator().setFrame(f, display: true)
+            },
+            completionHandler: { [weak self] in
+                guard let self else { return }
+                self.animating = false
+                self.shelf.frameString = NSStringFromRect(self.panel.frame)
+                if self.dockEdge != nil { self.slide(out: !self.panel.frame.contains(NSEvent.mouseLocation)) }
+            })
     }
 
     var panel: ShelfPanel { window as! ShelfPanel }
@@ -321,15 +329,20 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
     }
 
     private func evaluateDock() {
-        if NSEvent.pressedMouseButtons & 1 != 0 {   // still dragging the window
+        if NSEvent.pressedMouseButtons & 1 != 0 {  // still dragging the window
             dockTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: false) { [weak self] _ in self?.evaluateDock() }
             return
         }
         guard let screen = panel.screen ?? NSScreen.main else { return }
         let f = panel.frame, s = screen.frame
-        if f.maxX >= s.maxX - 2 { dock(.right) }
-        else if f.minX <= s.minX + 2 { dock(.left) }
-        else { dockEdge = nil; shelf.isDocked = false }
+        if f.maxX >= s.maxX - 2 {
+            dock(.right)
+        } else if f.minX <= s.minX + 2 {
+            dock(.left)
+        } else {
+            dockEdge = nil
+            shelf.isDocked = false
+        }
     }
 
     func dock(_ edge: Edge) {
@@ -362,13 +375,15 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
 
     private func animate(to frame: NSRect) {
         animating = true
-        NSAnimationContext.runAnimationGroup({ ctx in
-            ctx.duration = 0.2
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            panel.animator().setFrame(frame, display: true)
-        }, completionHandler: { [weak self] in
-            self?.animating = false
-        })
+        NSAnimationContext.runAnimationGroup(
+            { ctx in
+                ctx.duration = 0.2
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                panel.animator().setFrame(frame, display: true)
+            },
+            completionHandler: { [weak self] in
+                self?.animating = false
+            })
     }
 
     func pointerEntered() {
@@ -379,8 +394,8 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
         guard dockEdge != nil else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             guard let self, self.dockEdge != nil,
-                  !self.panel.frame.contains(NSEvent.mouseLocation),
-                  !(QLPreviewPanel.sharedPreviewPanelExists() && QLPreviewPanel.shared().isVisible)
+                !self.panel.frame.contains(NSEvent.mouseLocation),
+                !(QLPreviewPanel.sharedPreviewPanelExists() && QLPreviewPanel.shared().isVisible)
             else { return }
             self.slide(out: true)
         }
@@ -392,8 +407,9 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
         if modifiers.contains(.command) {
             if shelf.selection.contains(item.id) { shelf.selection.remove(item.id) } else { shelf.selection.insert(item.id) }
         } else if modifiers.contains(.shift), let last = lastClicked,
-                  let a = shelf.items.firstIndex(where: { $0.id == last }),
-                  let b = shelf.items.firstIndex(where: { $0.id == item.id }) {
+            let a = shelf.items.firstIndex(where: { $0.id == last }),
+            let b = shelf.items.firstIndex(where: { $0.id == item.id })
+        {
             shelf.selection = Set(shelf.items[min(a, b)...max(a, b)].map(\.id))
         } else {
             shelf.selection = [item.id]
@@ -410,7 +426,10 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
     func noteInternalDrop() { internalDrop = true }
 
     func dragEnded(_ dragged: [ShelfItem], operation: NSDragOperation) {
-        if internalDrop { internalDrop = false; return }
+        if internalDrop {
+            internalDrop = false
+            return
+        }
         guard !dragged.isEmpty, operation != [] else { return }
         let draggedAll = Set(dragged.map(\.id)) == Set(shelf.items.map(\.id))
         if operation.contains(.move) || operation.contains(.delete) {
@@ -560,7 +579,8 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
         if !shelf.selection.contains(item.id) { shelf.selection = [item.id] }
         let targets = shelf.selectedItems
         let menu = NSMenu()
-        menu.addItem(ClosureMenuItem("Open", symbol: "arrow.up.forward.app") { [weak self] in targets.forEach { self?.open($0) } })
+        menu.addItem(
+            ClosureMenuItem("Open", symbol: "arrow.up.forward.app") { [weak self] in targets.forEach { self?.open($0) } })
         menu.addItem(ClosureMenuItem("Quick Look", symbol: "eye") { [weak self] in self?.quickLook() })
         if !Actions.fileURLs(targets).isEmpty {
             menu.addItem(ClosureMenuItem("Show in Finder", symbol: "folder") { [weak self] in self?.reveal(targets) })
@@ -571,9 +591,10 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
         menu.addItem(.separator())
         addItemActions(to: menu, targets)
         menu.addItem(.separator())
-        menu.addItem(ClosureMenuItem("Remove from Shelf", symbol: "minus.circle") { [weak self] in
-            self?.shelf.remove(ids: Set(targets.map(\.id)))
-        })
+        menu.addItem(
+            ClosureMenuItem("Remove from Shelf", symbol: "minus.circle") { [weak self] in
+                self?.shelf.remove(ids: Set(targets.map(\.id)))
+            })
         return menu
     }
 
@@ -581,24 +602,29 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
         let targets = shelf.selectedOrAll
         let menu = NSMenu()
         if !targets.isEmpty {
-            let header = NSMenuItem(title: shelf.selection.isEmpty ? "All \(targets.count) Items" : "\(targets.count) Selected",
-                                    action: nil, keyEquivalent: "")
+            let header = NSMenuItem(
+                title: shelf.selection.isEmpty ? "All \(targets.count) Items" : "\(targets.count) Selected",
+                action: nil, keyEquivalent: "")
             header.isEnabled = false
             menu.addItem(header)
             addItemActions(to: menu, targets)
             menu.addItem(.separator())
         }
-        menu.addItem(ClosureMenuItem(CommandBarController.menuTitle, key: "k", symbol: "command") { [weak self] in
-            self?.showCommandBar()
-        })
+        menu.addItem(
+            ClosureMenuItem(CommandBarController.menuTitle, key: "k", symbol: "command") { [weak self] in
+                self?.showCommandBar()
+            })
         menu.addItem(.separator())
         menu.addItem(ClosureMenuItem("Rename Shelf…", symbol: "character.cursor.ibeam") { [weak self] in self?.renameShelf() })
         menu.submenu("Color", symbol: "paintpalette") { addColorItems(to: $0) }
-        menu.addItem(ClosureMenuItem(shelf.pinned ? "Unpin Shelf" : "Pin Shelf", symbol: shelf.pinned ? "pin.slash" : "pin") { [weak self] in
-            self?.shelf.pinned.toggle()
-        })
+        menu.addItem(
+            ClosureMenuItem(shelf.pinned ? "Unpin Shelf" : "Pin Shelf", symbol: shelf.pinned ? "pin.slash" : "pin") {
+                [weak self] in
+                self?.shelf.pinned.toggle()
+            })
         if dockEdge != nil {
-            menu.addItem(ClosureMenuItem("Undock", symbol: "rectangle.portrait.and.arrow.right") { [weak self] in self?.undock() })
+            menu.addItem(
+                ClosureMenuItem("Undock", symbol: "rectangle.portrait.and.arrow.right") { [weak self] in self?.undock() })
         } else {
             menu.submenu("Dock to Edge", symbol: "sidebar.right") { sub in
                 sub.addItem(ClosureMenuItem("Left Edge") { [weak self] in self?.dockNow(.left) })
@@ -606,14 +632,16 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
             }
         }
         menu.addItem(.separator())
-        menu.addItem(ClosureMenuItem("Select All", key: "a", enabled: !shelf.items.isEmpty) { [weak self] in
-            guard let self else { return }
-            self.shelf.selection = Set(self.shelf.items.map(\.id))
-        })
-        menu.addItem(ClosureMenuItem("Clear Shelf", symbol: "trash", enabled: !shelf.items.isEmpty) { [weak self] in
-            guard let self else { return }
-            self.shelf.remove(ids: Set(self.shelf.items.map(\.id)))
-        })
+        menu.addItem(
+            ClosureMenuItem("Select All", key: "a", enabled: !shelf.items.isEmpty) { [weak self] in
+                guard let self else { return }
+                self.shelf.selection = Set(self.shelf.items.map(\.id))
+            })
+        menu.addItem(
+            ClosureMenuItem("Clear Shelf", symbol: "trash", enabled: !shelf.items.isEmpty) { [weak self] in
+                guard let self else { return }
+                self.shelf.remove(ids: Set(self.shelf.items.map(\.id)))
+            })
         menu.addItem(ClosureMenuItem("Close Shelf", key: "w", symbol: "xmark") { [weak self] in self?.closeShelf() })
         return menu
     }
@@ -634,29 +662,33 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
         menu.addItem(ClosureMenuItem("Copy", key: "c", symbol: "doc.on.doc") { PB.copy(targets) })
         if !files.isEmpty {
             menu.addItem(ClosureMenuItem("Save Copies To…", symbol: "square.and.arrow.down") { Actions.saveCopies(files) })
-            menu.addItem(ClosureMenuItem("Create ZIP Archive", symbol: "doc.zipper") { [weak self] in
-                self?.perform("Compressing…") { Actions.zip(files).map { [.file($0, owned: true)] } ?? [] }
-            })
+            menu.addItem(
+                ClosureMenuItem("Create ZIP Archive", symbol: "doc.zipper") { [weak self] in
+                    self?.perform("Compressing…") { Actions.zip(files).map { [.file($0, owned: true)] } ?? [] }
+                })
         }
         if !images.isEmpty {
             menu.submenu("Convert Images", symbol: "photo.on.rectangle.angled") { sub in
                 for (label, type) in [("PNG", UTType.png), ("JPEG", .jpeg), ("HEIC", .heic), ("TIFF", .tiff)] {
-                    sub.addItem(ClosureMenuItem("To \(label)") { [weak self] in
-                        self?.perform("Converting…") { Actions.convert(images, to: type).map { .file($0, owned: true) } }
-                    })
+                    sub.addItem(
+                        ClosureMenuItem("To \(label)") { [weak self] in
+                            self?.perform("Converting…") { Actions.convert(images, to: type).map { .file($0, owned: true) } }
+                        })
                 }
             }
             menu.submenu("Resize Images", symbol: "arrow.down.right.and.arrow.up.left") { sub in
                 for (label, scale) in [("50%", 0.5), ("25%", 0.25)] {
-                    sub.addItem(ClosureMenuItem(label) { [weak self] in
-                        self?.perform("Resizing…") { Actions.resize(images, scale: scale).map { .file($0, owned: true) } }
-                    })
+                    sub.addItem(
+                        ClosureMenuItem(label) { [weak self] in
+                            self?.perform("Resizing…") { Actions.resize(images, scale: scale).map { .file($0, owned: true) } }
+                        })
                 }
                 sub.addItem(.separator())
                 for px in [2048, 1024, 512] {
-                    sub.addItem(ClosureMenuItem("Max \(px) px") { [weak self] in
-                        self?.perform("Resizing…") { Actions.resize(images, maxPixel: px).map { .file($0, owned: true) } }
-                    })
+                    sub.addItem(
+                        ClosureMenuItem("Max \(px) px") { [weak self] in
+                            self?.perform("Resizing…") { Actions.resize(images, maxPixel: px).map { .file($0, owned: true) } }
+                        })
                 }
             }
         }
@@ -671,21 +703,23 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
                 sub.addItem(none)
             }
             for name in Actions.shortcutNames {
-                sub.addItem(ClosureMenuItem(name) { [weak self] in
-                    self?.perform("Running “\(name)”…") {
-                        let out = Actions.runShortcut(name, files).trimmingCharacters(in: .whitespacesAndNewlines)
-                        return out.isEmpty ? [] : [.text(out)]
-                    }
-                })
+                sub.addItem(
+                    ClosureMenuItem(name) { [weak self] in
+                        self?.perform("Running “\(name)”…") {
+                            let out = Actions.runShortcut(name, files).trimmingCharacters(in: .whitespacesAndNewlines)
+                            return out.isEmpty ? [] : [.text(out)]
+                        }
+                    })
             }
         }
         Actions.refreshShortcuts()
 
         menu.submenu("Custom Scripts", symbol: "terminal") { sub in
             for script in Actions.scripts() {
-                sub.addItem(ClosureMenuItem(script.deletingPathExtension().lastPathComponent) { [weak self] in
-                    self?.perform("Running script…") { Actions.runScript(script, files) }
-                })
+                sub.addItem(
+                    ClosureMenuItem(script.deletingPathExtension().lastPathComponent) { [weak self] in
+                        self?.perform("Running script…") { Actions.runScript(script, files) }
+                    })
             }
             sub.addItem(.separator())
             sub.addItem(ClosureMenuItem("Open Scripts Folder") { NSWorkspace.shared.open(Actions.scriptsDir) })
@@ -700,30 +734,38 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
         var items: [NSMenuItem] = []
 
         if images.count >= 2 {
-            items.append(ClosureMenuItem("Stitch Images Vertically", symbol: "rectangle.split.1x2") { [weak self] in
-                self?.perform("Stitching…") { Actions.stitch(images, vertical: true).map { [.file($0, owned: true)] } ?? [] }
-            })
-            items.append(ClosureMenuItem("Stitch Images Side by Side", symbol: "rectangle.split.2x1") { [weak self] in
-                self?.perform("Stitching…") { Actions.stitch(images, vertical: false).map { [.file($0, owned: true)] } ?? [] }
-            })
+            items.append(
+                ClosureMenuItem("Stitch Images Vertically", symbol: "rectangle.split.1x2") { [weak self] in
+                    self?.perform("Stitching…") { Actions.stitch(images, vertical: true).map { [.file($0, owned: true)] } ?? [] }
+                })
+            items.append(
+                ClosureMenuItem("Stitch Images Side by Side", symbol: "rectangle.split.2x1") { [weak self] in
+                    self?.perform("Stitching…") { Actions.stitch(images, vertical: false).map { [.file($0, owned: true)] } ?? [] }
+                })
         }
         if !images.isEmpty {
-            items.append(ClosureMenuItem("Make PDF from Image\(images.count == 1 ? "" : "s")", symbol: "doc.richtext") { [weak self] in
-                self?.perform("Making PDF…") { Actions.imagesToPDF(images).map { [.file($0, owned: true)] } ?? [] }
-            })
+            items.append(
+                ClosureMenuItem("Make PDF from Image\(images.count == 1 ? "" : "s")", symbol: "doc.richtext") { [weak self] in
+                    self?.perform("Making PDF…") { Actions.imagesToPDF(images).map { [.file($0, owned: true)] } ?? [] }
+                })
         }
         if pdfs.count >= 2 {
-            items.append(ClosureMenuItem("Merge \(pdfs.count) PDFs", symbol: "doc.on.doc") { [weak self] in
-                self?.perform("Merging PDFs…") { Actions.mergePDFs(pdfs).map { [.file($0, owned: true)] } ?? [] }
-            })
+            items.append(
+                ClosureMenuItem("Merge \(pdfs.count) PDFs", symbol: "doc.on.doc") { [weak self] in
+                    self?.perform("Merging PDFs…") { Actions.mergePDFs(pdfs).map { [.file($0, owned: true)] } ?? [] }
+                })
         }
         if !videos.isEmpty {
-            items.append(ClosureMenuItem("Make GIF", symbol: "photo.stack") { [weak self] in
-                self?.perform("Making GIF…") { videos.compactMap(Actions.makeGIF).map { .file($0, owned: true) } }
-            })
-            items.append(ClosureMenuItem("Compress Video", symbol: "film") { [weak self] in
-                self?.perform("Compressing video…") { videos.compactMap(Actions.compressVideo).map { .file($0, owned: true) } }
-            })
+            items.append(
+                ClosureMenuItem("Make GIF", symbol: "photo.stack") { [weak self] in
+                    self?.perform("Making GIF…") { videos.compactMap(Actions.makeGIF).map { .file($0, owned: true) } }
+                })
+            items.append(
+                ClosureMenuItem("Compress Video", symbol: "film") { [weak self] in
+                    self?.perform("Compressing video…") {
+                        videos.compactMap(Actions.compressVideo).map { .file($0, owned: true) }
+                    }
+                })
         }
         guard !items.isEmpty else { return false }
         let header = NSMenuItem(title: "Suggested", action: nil, keyEquivalent: "")
@@ -738,25 +780,48 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
     func handleKey(_ event: NSEvent) -> Bool {
         let cmd = event.modifierFlags.contains(.command)
         switch event.keyCode {
-        case 49: quickLook(); return true                                // space
-        case 51, 117: if !shelf.selection.isEmpty { removeSelected() }; return true   // delete
-        case 53: shelf.selection = []; return true                       // escape
-        case 36:                                                         // return
+        case 49:
+            quickLook()
+            return true  // space
+        case 51, 117:
+            if !shelf.selection.isEmpty { removeSelected() }
+            return true  // delete
+        case 53:
+            shelf.selection = []
+            return true  // escape
+        case 36:  // return
             let selected = shelf.selectedItems
-            if shelf.expanded, selected.count == 1, selected[0].kind == .file { rename(selected[0]) }
-            else { selected.forEach(open) }
+            if shelf.expanded, selected.count == 1, selected[0].kind == .file {
+                rename(selected[0])
+            } else {
+                selected.forEach(open)
+            }
             return true
-        case 125 where cmd: shelf.selectedItems.forEach(open); return true   // ⌘↓
+        case 125 where cmd:
+            shelf.selectedItems.forEach(open)
+            return true  // ⌘↓
         default: break
         }
         guard cmd, let key = event.charactersIgnoringModifiers?.lowercased() else { return false }
         switch key {
-        case "a": shelf.selection = Set(shelf.items.map(\.id)); return true
-        case "k": showCommandBar(); return true
-        case "o": shelf.selectedItems.forEach(open); return true
-        case "c": PB.copy(shelf.selectedOrAll); return true
-        case "w": closeShelf(); return true
-        case "v": PB.read(.general) { [weak self] in self?.shelf.add($0) }; return true
+        case "a":
+            shelf.selection = Set(shelf.items.map(\.id))
+            return true
+        case "k":
+            showCommandBar()
+            return true
+        case "o":
+            shelf.selectedItems.forEach(open)
+            return true
+        case "c":
+            PB.copy(shelf.selectedOrAll)
+            return true
+        case "w":
+            closeShelf()
+            return true
+        case "v":
+            PB.read(.general) { [weak self] in self?.shelf.add($0) }
+            return true
         default: return false
         }
     }
@@ -765,7 +830,10 @@ final class ShelfWindowController: NSWindowController, NSWindowDelegate, QLPrevi
 
     func quickLook() {
         guard let ql = QLPreviewPanel.shared() else { return }
-        if ql.isVisible { ql.orderOut(nil); return }
+        if ql.isVisible {
+            ql.orderOut(nil)
+            return
+        }
         previewURLs = shelf.selectedOrAll.compactMap(Actions.materialize)
         guard !previewURLs.isEmpty else { return }
         NSApp.activate(ignoringOtherApps: true)

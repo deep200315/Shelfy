@@ -39,7 +39,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             guard let panel = NSApp.keyWindow as? ShelfPanel, let controller = panel.controller,
-                  !(panel.firstResponder is NSText) else { return event }
+                !(panel.firstResponder is NSText)
+            else { return event }
             return controller.handleKey(event) ? nil : event
         }
 
@@ -56,7 +57,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
                 for (i, shelf) in (self?.store.openShelves ?? []).enumerated() {
                     guard let view = self?.store.controller(for: shelf)?.window?.contentView,
-                          let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { continue }
+                        let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds)
+                    else { continue }
                     view.cacheDisplay(in: view.bounds, to: rep)
                     try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "\(prefix)\(i).png"))
                 }
@@ -164,11 +166,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         }
         newItem.keyEquivalentModifierMask = [.control, .option]
         menu.addItem(newItem)
-        menu.addItem(ClosureMenuItem("New Shelf from Clipboard", symbol: "doc.on.clipboard") { [weak self] in
-            guard let self else { return }
-            let anchor = self.statusItemAnchor
-            PB.read(.general) { items in self.store.newShelf(items: items, placement: .below(anchor)) }
-        })
+        menu.addItem(
+            ClosureMenuItem("New Shelf from Clipboard", symbol: "doc.on.clipboard") { [weak self] in
+                guard let self else { return }
+                let anchor = self.statusItemAnchor
+                PB.read(.general) { items in self.store.newShelf(items: items, placement: .below(anchor)) }
+            })
 
         let clipboard = ClosureMenuItem("Clipboard History", key: "v", symbol: "list.clipboard") { [weak self] in
             guard let self else { return }
@@ -186,9 +189,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             for shelf in store.openShelves {
                 menu.addItem(shelfMenuItem(shelf) { [weak self] in self?.store.controller(for: shelf)?.bringToFront() })
             }
-            menu.addItem(ClosureMenuItem("Close All Shelves", symbol: "xmark.rectangle") { [weak self] in
-                self?.store.openShelves.forEach { self?.store.close($0) }
-            })
+            menu.addItem(
+                ClosureMenuItem("Close All Shelves", symbol: "xmark.rectangle") { [weak self] in
+                    self?.store.openShelves.forEach { self?.store.close($0) }
+                })
         }
 
         menu.addItem(.separator())
@@ -199,10 +203,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                 sub.addItem(none)
             } else {
                 for shelf in store.recentShelves {
-                    sub.addItem(shelfMenuItem(shelf) { [weak self] in
-                        guard let self else { return }
-                        self.store.open(shelf, placement: .below(self.statusItemAnchor))
-                    })
+                    sub.addItem(
+                        shelfMenuItem(shelf) { [weak self] in
+                            guard let self else { return }
+                            self.store.open(shelf, placement: .below(self.statusItemAnchor))
+                        })
                 }
                 sub.addItem(.separator())
                 sub.addItem(ClosureMenuItem("Clear Recent Shelves") { [weak self] in self?.store.clearRecent() })
