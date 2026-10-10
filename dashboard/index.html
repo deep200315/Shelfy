@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shelfy Releases</title>
+<meta name="description" content="Release, environment and pipeline dashboard for Shelfy, a free drag-and-drop shelf for macOS.">
+<link rel="icon" href="icon.png">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --surface-2: #f2f2ef;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --ring: rgba(11, 11, 11, 0.10);
+    --accent: #2a78d6;
+    --series-1: #2a78d6;
+    --good: #0ca30c;
+    --good-ink: #006300;
+    --warning: #fab219;
+    --critical: #d03b3b;
+    --critical-ink: #b42323;
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --surface-2: #232321;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --ring: rgba(255, 255, 255, 0.10);
+      --accent: #3987e5;
+      --series-1: #3987e5;
+      --good-ink: #0ca30c;
+      --critical-ink: #ef6b6b;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321; --ink: #ffffff; --ink-2: #c3c2b7;
+    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255, 255, 255, 0.10); --accent: #3987e5;
+    --series-1: #3987e5; --good-ink: #0ca30c; --critical-ink: #ef6b6b;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 16px 64px; }
+
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+  header img { width: 48px; height: 48px; }
+  header h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--ink-2); }
+  header .meta { margin-left: auto; text-align: right; color: var(--muted); font-size: 12.5px; }
+
+  h2 { font-size: 13px; font-weight: 600; color: var(--ink-2); margin: 36px 0 10px; }
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: 0 0 0 1px var(--ring);
+    padding: 18px;
+  }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 860px) { .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .grid-3, .grid-4 { grid-template-columns: 1fr; } header .meta { display: none; } }
+
+  .env-label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+  .env-version { font-size: 28px; font-weight: 650; letter-spacing: -0.02em; margin: 10px 0 2px; font-variant-numeric: tabular-nums; }
+  .env-sub { color: var(--muted); font-size: 12.5px; }
+  .env-empty { color: var(--muted); margin-top: 14px; }
+  .buttons { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 8px; font-weight: 550; font-size: 13px;
+    background: var(--surface-2); color: var(--ink); box-shadow: 0 0 0 1px var(--ring);
+  }
+  .btn.primary { background: var(--accent); color: #fff; box-shadow: none; }
+  .btn:hover { text-decoration: none; filter: brightness(1.05); }
+
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+  .status svg { width: 14px; height: 14px; flex: none; }
+
+  .commits { list-style: none; padding: 0; margin: 12px 0 0; font-size: 12.5px; max-height: 132px; overflow: auto; }
+  .commits li { display: flex; gap: 8px; padding: 3px 0; color: var(--ink-2); }
+  .commits code, td code { font: 11.5px ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); }
+
+  .stat .value { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .stat .label { color: var(--ink-2); font-size: 12.5px; }
+  .stat .note { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+  .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .chart-head h3 { margin: 0; font-size: 14px; font-weight: 600; }
+  .chart-head span { color: var(--muted); font-size: 12px; }
+  #chart { position: relative; }
+  #chart svg { display: block; width: 100%; height: 200px; overflow: visible; }
+  .tooltip {
+    position: absolute; pointer-events: none; z-index: 2;
+    background: var(--surface); color: var(--ink); border-radius: 10px;
+    box-shadow: 0 0 0 1px var(--ring), 0 6px 20px rgba(0, 0, 0, 0.12);
+    padding: 8px 10px; font-size: 12px; white-space: nowrap; transform: translate(-50%, -100%);
+  }
+  .tooltip b { font-variant-numeric: tabular-nums; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 0 10px 8px; }
+  td { padding: 9px 10px; border-top: 1px solid var(--grid); vertical-align: middle; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .table-card { padding: 12px 8px 4px; overflow-x: auto; }
+  .branch { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink-2); }
+  .tag { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); box-shadow: 0 0 0 1px var(--ring); }
+
+  .changes { margin: 0; padding-left: 18px; }
+  .changes li { margin: 3px 0; }
+  .changes .group { color: var(--muted); font-size: 12px; }
+
+  .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
+  .flow .node { padding: 4px 10px; border-radius: 8px; background: var(--surface-2); box-shadow: 0 0 0 1px var(--ring); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; color: var(--ink); }
+  .flow .arrow { color: var(--muted); }
+  footer { margin-top: 40px; color: var(--muted); font-size: 12px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="icon.png" alt="">
+    <div>
+      <h1>Shelfy</h1>
+      <p id="tagline">Release dashboard</p>
+    </div>
+    <div class="meta"><div id="updated"></div><a id="repo-link" href="#">GitHub</a></div>
+  </header>
+
+  <h2>Environments</h2>
+  <div class="grid-3">
+    <section class="card" id="env-production"></section>
+    <section class="card" id="env-development"></section>
+    <section class="card" id="env-promotion"></section>
+  </div>
+
+  <h2>Pipeline</h2>
+  <div class="grid-4" id="stats"></div>
+  <section class="card" style="margin-top: 12px">
+    <div class="chart-head"><h3>Pipeline run time</h3><span id="chart-note"></span></div>
+    <div id="chart"></div>
+  </section>
+
+  <h2>Recent runs</h2>
+  <section class="card table-card"><table id="runs"></table></section>
+
+  <h2>Releases</h2>
+  <section class="card table-card"><table id="releases"></table></section>
+
+  <div class="grid-3" style="grid-template-columns: 2fr 1fr; margin-top: 0">
+    <div>
+      <h2>Unreleased on develop</h2>
+      <section class="card" id="unreleased"></section>
+    </div>
+    <div>
+      <h2>How changes ship</h2>
+      <section class="card">
+        <div class="flow">
+          <span class="node">feature/*</span><span class="arrow">→</span>
+          <span class="node">develop</span><span class="arrow">→</span>
+          <span class="node">release/v*</span><span class="arrow">→</span>
+          <span class="node">main</span>
+        </div>
+        <p class="env-sub" style="margin: 12px 0 0">Every arrow is a pull request gated by CI. Merging into <b>develop</b> deploys the Dev build; merging into <b>main</b> publishes the production release.</p>
+      </section>
+    </div>
+  </div>
+
+  <footer>Shelfy is free and open source (MIT). Builds are ad-hoc signed: on first launch, right-click Shelfy.app → Open.</footer>
+</div>
+
+<script>
+const ICONS = {
+  success: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="var(--good)"/><path d="M4.8 8.2l2.1 2.1 4.3-4.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  failure: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="var(--critical)"/><path d="M5.5 5.5l5 5m0-5l-5 5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  running: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="var(--warning)" stroke-width="2"/><circle cx="8" cy="8" r="2.5" fill="var(--warning)"/></svg>',
+  neutral: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" fill="none" stroke="var(--muted)" stroke-width="2"/></svg>',
+};
+
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "—";
+const fmtDuration = (s) => s == null ? "—" : s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
+const fmtSize = (b) => `${(b / 1048576).toFixed(1)} MB`;
+const fmtCount = (n) => Number(n || 0).toLocaleString();
+function ago(iso) {
+  const s = (Date.now() - new Date(iso)) / 1000;
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
+  return `${Math.round(s / 86400)} d ago`;
+}
+function statusOf(run) {
+  if (run.status !== "completed") return { key: "running", label: "Running" };
+  if (run.conclusion === "success") return { key: "success", label: "Passed" };
+  if (["failure", "timed_out", "startup_failure"].includes(run.conclusion)) return { key: "failure", label: "Failed" };
+  return { key: "neutral", label: run.conclusion ? run.conclusion[0].toUpperCase() + run.conclusion.slice(1).replace("_", " ") : "Unknown" };
+}
+const statusHTML = (st) => `<span class="status">${ICONS[st.key]}${esc(st.label)}</span>`;
+
+function envCard(el, title, rel, deployRun, emptyText) {
+  const st = deployRun ? statusOf(deployRun) : null;
+  if (!rel) {
+    el.innerHTML = `<div class="env-label">${esc(title)}</div><p class="env-empty">${esc(emptyText)}</p>`;
+    return;
+  }
+  const dmg = rel.assets.find((a) => a.name.endsWith(".dmg"));
+  const zip = rel.assets.find((a) => a.name.endsWith(".zip"));
+  const version = rel.tag === "dev" ? rel.name.replace(/^Dev build\s*/, "") : rel.tag;
+  el.innerHTML = `
+    <div class="env-label">${esc(title)}${st ? `<span style="margin-left:auto">${statusHTML(st)}</span>` : ""}</div>
+    <div class="env-version">${esc(version)}</div>
+    <div class="env-sub">${fmtDate(rel.published)} · <code>${esc(rel.commit)}</code> · ${fmtCount(rel.downloads)} downloads</div>
+    <div class="buttons">
+      ${dmg ? `<a class="btn primary" href="${esc(dmg.url)}">Download .dmg <span style="opacity:.75">${fmtSize(dmg.size)}</span></a>` : ""}
+      ${zip ? `<a class="btn" href="${esc(zip.url)}">.zip</a>` : ""}
+      <a class="btn" href="${esc(rel.url)}">Notes</a>
+    </div>`;
+}
+
+function promotionCard(el, p) {
+  const n = p.aheadBy;
+  el.innerHTML = `
+    <div class="env-label">Next release</div>
+    <div class="env-version">${n}</div>
+    <div class="env-sub">${n === 1 ? "commit" : "commits"} on develop not yet in production</div>
+    ${n ? `<ul class="commits">${p.commits.map((c) => `<li><code>${esc(c.sha)}</code><a href="${esc(c.url)}">${esc(c.title)}</a></li>`).join("")}</ul>` : ""}
+    <div class="buttons"><a class="btn" href="${esc(p.startReleaseUrl)}">Start release</a></div>`;
+}
+
+function stats(el, d) {
+  const recent = d.runs.filter((r) => r.status === "completed").slice(0, 30);
+  const passed = recent.filter((r) => r.conclusion === "success").length;
+  const ci = d.runs.filter((r) => r.workflow === "CI" && r.seconds != null).map((r) => r.seconds).sort((a, b) => a - b);
+  const median = ci.length ? ci[Math.floor(ci.length / 2)] : null;
+  const tiles = [
+    { value: recent.length ? `${Math.round((passed / recent.length) * 100)}%` : "—", label: "Pipeline success", note: `${passed} of ${recent.length} recent runs` },
+    { value: fmtDuration(median), label: "Median CI time", note: "lint, build, test, package" },
+    { value: fmtCount(d.tests), label: "Automated tests", note: "run on every pull request" },
+    { value: fmtCount(d.pulls.length), label: "Open pull requests", note: d.pulls[0] ? `#${d.pulls[0].number} ${d.pulls[0].title}` : "nothing waiting" },
+  ];
+  el.innerHTML = tiles.map((t) => `<div class="card stat"><div class="value">${esc(t.value)}</div><div class="label">${esc(t.label)}</div><div class="note">${esc(t.note)}</div></div>`).join("");
+}
+
+function niceMax(v) {
+  const steps = [30, 60, 90, 120, 180, 240, 300, 420, 600, 900, 1200, 1800];
+  return steps.find((s) => s >= v) || Math.ceil(v / 600) * 600;
+}
+
+function chart(el, runs) {
+  // Single series (CI and deploy runs, oldest → newest); failures use the status color plus an ✕ marker.
+  const data = runs.filter((r) => r.seconds != null && /CI|Deploy/.test(r.workflow)).slice(0, 24).reverse();
+  document.getElementById("chart-note").textContent = data.length ? `${data.length} runs · hover for details` : "";
+  if (!data.length) { el.innerHTML = '<p class="env-empty">No completed runs yet.</p>'; return; }
+
+  const W = Math.max(el.clientWidth, 280), H = 200, pad = { l: 40, r: 8, t: 14, b: 22 };
+  const max = niceMax(Math.max(...data.map((d) => d.seconds)));
+  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+  const band = iw / data.length, bw = Math.min(24, band - 2);
+  const y = (v) => pad.t + ih - (v / max) * ih;
+  const ticks = [0, max / 2, max];
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Run time for the last ${data.length} runs">`;
+  for (const t of ticks) {
+    svg += `<line x1="${pad.l}" x2="${W - pad.r}" y1="${y(t)}" y2="${y(t)}" stroke="${t === 0 ? "var(--axis)" : "var(--grid)"}" stroke-width="1"/>`;
+    svg += `<text x="${pad.l - 8}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${fmtDuration(Math.round(t))}</text>`;
+  }
+  data.forEach((d, i) => {
+    const x = pad.l + i * band + (band - bw) / 2;
+    const h = Math.max(2, (d.seconds / max) * ih);
+    const top = y(d.seconds), r = Math.min(4, h, bw / 2);
+    const failed = statusOf(d).key === "failure";
+    const fill = failed ? "var(--critical)" : "var(--series-1)";
+    // 4px rounded data-end, square at the baseline.
+    svg += `<path d="M${x},${top + h} V${top + r} Q${x},${top} ${x + r},${top} H${x + bw - r} Q${x + bw},${top} ${x + bw},${top + r} V${top + h} Z" fill="${fill}"/>`;
+    if (failed) svg += `<text x="${x + bw / 2}" y="${top - 4}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--critical-ink)">✕</text>`;
+    svg += `<rect class="hit" data-i="${i}" x="${pad.l + i * band}" y="${pad.t}" width="${band}" height="${ih}" fill="transparent"/>`;
+  });
+  const first = data[0], last = data[data.length - 1];
+  svg += `<text x="${pad.l}" y="${H - 4}" font-size="11" fill="var(--muted)">${fmtDate(first.started)}</text>`;
+  svg += `<text x="${W - pad.r}" y="${H - 4}" text-anchor="end" font-size="11" fill="var(--muted)">${fmtDate(last.started)}</text>`;
+  svg += "</svg>";
+  el.innerHTML = svg + '<div class="tooltip" hidden></div>';
+
+  const tip = el.querySelector(".tooltip");
+  el.querySelectorAll(".hit").forEach((hit) => {
+    hit.addEventListener("mouseenter", () => {
+      const d = data[+hit.dataset.i], st = statusOf(d);
+      tip.innerHTML = `<b>${fmtDuration(d.seconds)}</b> · ${esc(st.label)}<br>${esc(d.workflow)} · <span class="branch">${esc(d.branch)}</span><br><span style="color:var(--muted)">${esc(fmtDate(d.started))} · ${esc(d.commit)}</span>`;
+      const box = hit.getBoundingClientRect(), host = el.getBoundingClientRect();
+      tip.style.left = `${box.left - host.left + box.width / 2}px`;
+      tip.style.top = `${y(d.seconds) * (host.height / H) - 8}px`;
+      tip.hidden = false;
+    });
+    hit.addEventListener("mouseleave", () => { tip.hidden = true; });
+    hit.addEventListener("click", () => window.open(data[+hit.dataset.i].url, "_blank"));
+  });
+}
+
+function runsTable(el, runs) {
+  if (!runs.length) { el.innerHTML = "<tr><td>No runs yet.</td></tr>"; return; }
+  el.innerHTML = `<thead><tr><th>Status</th><th>Workflow</th><th>Branch</th><th>Trigger</th><th class="num">Duration</th><th class="num">When</th></tr></thead><tbody>` +
+    runs.slice(0, 15).map((r) => `<tr>
+      <td>${statusHTML(statusOf(r))}</td>
+      <td><a href="${esc(r.url)}">${esc(r.workflow)}</a><div class="env-sub">${esc(r.title)}</div></td>
+      <td class="branch">${esc(r.branch)}</td>
+      <td>${esc(r.event.replace("_", " "))}</td>
+      <td class="num">${fmtDuration(r.seconds)}</td>
+      <td class="num">${ago(r.started)}</td></tr>`).join("") + "</tbody>";
+}
+
+function releasesTable(el, releases) {
+  if (!releases.length) { el.innerHTML = "<tr><td>No releases yet.</td></tr>"; return; }
+  el.innerHTML = `<thead><tr><th>Version</th><th>Channel</th><th>Published</th><th>Commit</th><th class="num">Downloads</th><th></th></tr></thead><tbody>` +
+    releases.map((r) => {
+      const channel = r.tag === "dev" ? "Development" : r.pulledBack ? "Pulled back" : "Production";
+      const dmg = r.assets.find((a) => a.name.endsWith(".dmg"));
+      return `<tr>
+        <td><a href="${esc(r.url)}">${esc(r.name)}</a></td>
+        <td><span class="tag">${channel}</span></td>
+        <td>${fmtDate(r.published)}</td>
+        <td><code>${esc(r.commit)}</code></td>
+        <td class="num">${fmtCount(r.downloads)}</td>
+        <td class="num">${dmg ? `<a href="${esc(dmg.url)}">.dmg</a>` : ""}</td></tr>`;
+    }).join("") + "</tbody>";
+}
+
+function unreleased(el, changes) {
+  if (!changes.length) { el.innerHTML = '<p class="env-empty" style="margin:0">Nothing waiting: develop matches the latest release notes.</p>'; return; }
+  const groups = [...new Set(changes.map((c) => c.group))];
+  el.innerHTML = groups.map((g) => `<div class="group">${esc(g)}</div><ul class="changes">${changes.filter((c) => c.group === g).map((c) => `<li>${esc(c.text)}</li>`).join("")}</ul>`).join("");
+}
+
+fetch("data.json", { cache: "no-store" })
+  .then((r) => r.json())
+  .then((d) => {
+    document.getElementById("updated").textContent = `Updated ${ago(d.generated)}`;
+    const repoLink = document.getElementById("repo-link");
+    repoLink.href = d.repo.url;
+    repoLink.textContent = `${d.repo.name} ↗`;
+    if (d.repo.description) document.getElementById("tagline").textContent = d.repo.description;
+
+    const lastDeploy = (name) => d.runs.find((r) => r.workflow === name);
+    envCard(document.getElementById("env-production"), "Production", d.environments.production, lastDeploy("Deploy PROD"), "No production release yet. Merge a release PR into main to publish one.");
+    envCard(document.getElementById("env-development"), "Development", d.environments.development, lastDeploy("Deploy DEV"), "No dev build yet. Merging into develop publishes one.");
+    promotionCard(document.getElementById("env-promotion"), d.promotion);
+    stats(document.getElementById("stats"), d);
+    const chartEl = document.getElementById("chart");
+    chart(chartEl, d.runs);
+    let lastWidth = chartEl.clientWidth;
+    new ResizeObserver(() => { if (chartEl.clientWidth !== lastWidth) { lastWidth = chartEl.clientWidth; chart(chartEl, d.runs); } }).observe(chartEl);
+    runsTable(document.getElementById("runs"), d.runs);
+    releasesTable(document.getElementById("releases"), d.releases);
+    unreleased(document.getElementById("unreleased"), d.unreleased);
+  })
+  .catch(() => {
+    document.querySelector(".wrap").insertAdjacentHTML("beforeend", '<p class="env-empty">Could not load dashboard data.</p>');
+  });
+</script>
+</body>
+</html>
