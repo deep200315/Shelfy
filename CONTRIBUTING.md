@@ -47,4 +47,4 @@ Commits use `type: summary` (`feat`, `fix`, `refactor`, `test`, `docs`, `chore`,
 
 ## Releases are free and ad-hoc signed
 
-Shelfy has no paid Apple Developer ID, so builds are ad-hoc signed: on first launch, right-click **Shelfy.app → Open**. `scripts/package_app.sh` signs with `APP_IDENTITY` if one is ever provided.
+Shelfy has no paid Apple Developer ID, so builds are ad-hoc signed: users approve the first launch in **System Settings → Privacy & Security → Open Anyway** (macOS no longer offers right-click → Open for non-notarized apps). `scripts/package_app.sh` signs with `APP_IDENTITY` if one is ever provided.
