@@ -56,6 +56,8 @@ jobs:
           lipo -archs build/Shelfy.app/Contents/MacOS/Shelfy
           codesign --verify --strict --verbose=2 build/Shelfy.app
           plutil -lint build/Shelfy.app/Contents/Info.plist
+          # Regression guard: without a category the app only shows up in Apps-view search.
+          /usr/libexec/PlistBuddy -c "Print LSApplicationCategoryType" build/Shelfy.app/Contents/Info.plist
 
       - name: Make DMG and zip
         run: scripts/make_dmg.sh
