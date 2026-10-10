@@ -26,8 +26,24 @@ final class DragMonitor {
         if let m = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown, handler: down) { monitors.append(m) }
         if let m = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDragged, handler: dragged) { monitors.append(m) }
         if let m = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp, handler: up) { monitors.append(m) }
-        if let m = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown, handler: { down($0); return $0 }) { monitors.append(m) }
-        if let m = NSEvent.addLocalMonitorForEvents(matching: .leftMouseUp, handler: { up($0); return $0 }) { monitors.append(m) }
+        if let m = NSEvent.addLocalMonitorForEvents(
+            matching: .leftMouseDown,
+            handler: {
+                down($0)
+                return $0
+            })
+        {
+            monitors.append(m)
+        }
+        if let m = NSEvent.addLocalMonitorForEvents(
+            matching: .leftMouseUp,
+            handler: {
+                up($0)
+                return $0
+            })
+        {
+            monitors.append(m)
+        }
     }
 
     private func mouseDown() {
@@ -48,7 +64,10 @@ final class DragMonitor {
         if !isDragging {
             guard dragPasteboard.changeCount != baseline else { return }
             isDragging = true
-            lastX = x; segmentStart = x; direction = 0; turns = []
+            lastX = x
+            segmentStart = x
+            direction = 0
+            turns = []
             onDragChanged?(true)
         }
         guard Settings.shared.shakeEnabled, !shookThisDrag else { return }
@@ -90,9 +109,10 @@ final class NotchDropZone {
 
     func show() {
         let mouse = NSEvent.mouseLocation
-        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(mouse) && $0.safeAreaInsets.top > 0 })
+        guard
+            let screen = NSScreen.screens.first(where: { $0.frame.contains(mouse) && $0.safeAreaInsets.top > 0 })
                 ?? NSScreen.screens.first(where: { $0.safeAreaInsets.top > 0 }),
-              let left = screen.auxiliaryTopLeftArea, let right = screen.auxiliaryTopRightArea
+            let left = screen.auxiliaryTopLeftArea, let right = screen.auxiliaryTopRightArea
         else { return }
         let height = screen.safeAreaInsets.top
         let minX = screen.frame.minX + left.width
@@ -100,8 +120,9 @@ final class NotchDropZone {
         notchRect = NSRect(x: minX, y: screen.frame.maxY - height, width: maxX - minX, height: height)
 
         if panel == nil {
-            let p = NSPanel(contentRect: notchRect, styleMask: [.borderless, .nonactivatingPanel],
-                            backing: .buffered, defer: false)
+            let p = NSPanel(
+                contentRect: notchRect, styleMask: [.borderless, .nonactivatingPanel],
+                backing: .buffered, defer: false)
             p.level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 1)
             p.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
             p.backgroundColor = .clear
@@ -149,7 +170,12 @@ final class NotchDropZone {
 }
 
 private final class NotchView: DropZoneView {
-    var expanded = false { didSet { label.isHidden = !expanded; needsDisplay = true } }
+    var expanded = false {
+        didSet {
+            label.isHidden = !expanded
+            needsDisplay = true
+        }
+    }
     private let label = NSTextField(labelWithString: "Drop to open a shelf")
 
     override init(frame: NSRect) {
@@ -175,9 +201,11 @@ private final class NotchView: DropZoneView {
         path.move(to: NSPoint(x: b.minX, y: b.maxY))
         path.line(to: NSPoint(x: b.maxX, y: b.maxY))
         path.line(to: NSPoint(x: b.maxX, y: b.minY + r))
-        path.appendArc(withCenter: NSPoint(x: b.maxX - r, y: b.minY + r), radius: r, startAngle: 0, endAngle: 270, clockwise: true)
+        path.appendArc(
+            withCenter: NSPoint(x: b.maxX - r, y: b.minY + r), radius: r, startAngle: 0, endAngle: 270, clockwise: true)
         path.line(to: NSPoint(x: b.minX + r, y: b.minY))
-        path.appendArc(withCenter: NSPoint(x: b.minX + r, y: b.minY + r), radius: r, startAngle: 270, endAngle: 180, clockwise: true)
+        path.appendArc(
+            withCenter: NSPoint(x: b.minX + r, y: b.minY + r), radius: r, startAngle: 270, endAngle: 180, clockwise: true)
         path.close()
         path.fill()
         if expanded {

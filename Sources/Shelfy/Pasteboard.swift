@@ -15,15 +15,18 @@ enum PB {
     /// Reads whatever was dragged or copied into shelf items. Completion runs once, on the main queue.
     static func read(_ pb: NSPasteboard, completion: @escaping ([ShelfItem]) -> Void) {
         // 1. Real files and folders.
-        if let urls = pb.readObjects(forClasses: [NSURL.self],
-                                     options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
+        if let urls = pb.readObjects(
+            forClasses: [NSURL.self],
+            options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty
+        {
             completion(urls.map { .file($0) })
             return
         }
 
         // 2. File promises (Photos, Mail attachments, browser images…).
         if let receivers = pb.readObjects(forClasses: [NSFilePromiseReceiver.self]) as? [NSFilePromiseReceiver],
-           !receivers.isEmpty {
+            !receivers.isEmpty
+        {
             let dir = ShelfStore.newItemDir()
             let group = DispatchGroup()
             let lock = NSLock()
@@ -33,7 +36,8 @@ enum PB {
                 var count = 0
                 for _ in 0..<expected { group.enter() }
                 receiver.receivePromisedFiles(atDestination: dir, options: [:], operationQueue: promiseQueue) { url, error in
-                    lock.lock(); defer { lock.unlock() }
+                    lock.lock()
+                    defer { lock.unlock() }
                     if error == nil { received.append(url) }
                     count += 1
                     if count <= expected { group.leave() }
@@ -58,14 +62,18 @@ enum PB {
         // 4. Web links.
         if let urls = pb.readObjects(forClasses: [NSURL.self]) as? [URL] {
             let links = urls.filter { !$0.isFileURL }
-            if !links.isEmpty { completion(links.map { .link($0) }); return }
+            if !links.isEmpty {
+                completion(links.map { .link($0) })
+                return
+            }
         }
 
         // 5. Text.
         if let s = pb.string(forType: .string), !s.isEmpty {
             let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)
             if let url = URL(string: trimmed), let scheme = url.scheme, ["http", "https"].contains(scheme),
-               !trimmed.contains(" ") {
+                !trimmed.contains(" ")
+            {
                 completion([.link(url)])
             } else {
                 completion([.text(s)])

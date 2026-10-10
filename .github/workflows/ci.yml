@@ -1,0 +1,59 @@
+# Quality gates for every pull request and every push to main.
+# Lint → build (warnings are errors) → tests → package a universal app (downloadable preview build).
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint, build, test, package
+    # Liquid Glass APIs need the macOS 26 SDK (Xcode 26+).
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # tags + full history: the version comes from the latest tag
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Lint
+        run: swift format lint --strict --recursive Sources Tests Package.swift
+
+      - name: Build (warnings are errors)
+        run: swift build -Xswiftc -warnings-as-errors
+
+      - name: Test
+        run: swift test
+
+      - name: Package universal app
+        run: ARCHES="arm64 x86_64" scripts/package_app.sh release
+
+      - name: Verify bundle
+        run: |
+          lipo -archs build/Shelfy.app/Contents/MacOS/Shelfy
+          codesign --verify --strict --verbose=2 build/Shelfy.app
+          plutil -lint build/Shelfy.app/Contents/Info.plist
+
+      - name: Zip preview build
+        run: ditto -c -k --keepParent build/Shelfy.app "Shelfy-${GITHUB_SHA::7}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Shelfy-preview-${{ github.sha }}
+          path: Shelfy-*.zip
+          retention-days: 14

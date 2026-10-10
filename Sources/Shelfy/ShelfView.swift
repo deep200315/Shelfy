@@ -77,10 +77,13 @@ struct ShelfView: View {
             if shelf.showInstantActions {
                 Pill(text: "Instant Actions")
             } else if !shelf.items.isEmpty {
-                Button { shelf.expanded = true } label: {
-                    Pill(text: Metadata.title(for: shelf.items),
-                         dot: shelf.colorIndex == 0 ? nil : ShelfColor.color(shelf.colorIndex),
-                         trailingSymbol: "chevron.down.circle.fill")
+                Button {
+                    shelf.expanded = true
+                } label: {
+                    Pill(
+                        text: Metadata.title(for: shelf.items),
+                        dot: shelf.colorIndex == 0 ? nil : ShelfColor.color(shelf.colorIndex),
+                        trailingSymbol: "chevron.down.circle.fill")
                 }
                 .buttonStyle(.plain)
             }
@@ -107,8 +110,9 @@ private struct TopBar: View {
 
     var body: some View {
         ZStack {
-            WindowDragArea(onDoubleClick: { shelf.controller?.renameShelf() },
-                           menu: { shelf.controller?.actionsMenu() })
+            WindowDragArea(
+                onDoubleClick: { shelf.controller?.renameShelf() },
+                menu: { shelf.controller?.actionsMenu() })
             if let title {
                 Text(title)
                     .font(.system(size: 12, weight: .semibold))
@@ -209,13 +213,17 @@ private struct Pile: View {
         .animation(.spring(duration: 0.35, bounce: 0.25), value: items.map(\.id))
     }
 
-    private func depth(_ index: Int) -> Int { items.count - 1 - index }   // 0 = top card
+    private func depth(_ index: Int) -> Int { items.count - 1 - index }  // 0 = top card
     /// Position relative to the middle of the fan, from -2 to 2.
     private func spread(_ index: Int) -> CGFloat { CGFloat(index) - CGFloat(items.count - 1) / 2 }
 
     private func angle(_ index: Int) -> Double {
         if fanned { return Double(spread(index)) * 9 }
-        switch depth(index) { case 0: return 0; case 1: return -7; default: return 6 }
+        switch depth(index) {
+        case 0: return 0
+        case 1: return -7
+        default: return 6
+        }
     }
 
     private func offset(_ index: Int) -> CGSize {
@@ -317,8 +325,10 @@ private struct InstantActionsGrid: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 34, height: 34)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(RoundedRectangle(cornerRadius: 12)
-                    .fill(hovering ? Color.accentColor : Color.primary.opacity(0.08)))
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(hovering ? Color.accentColor : Color.primary.opacity(0.08))
+                )
                 .overlay(DropZone(onHover: { hovering = $0 }, onDrop: action))
                 .help(title)
                 .animation(.easeOut(duration: 0.1), value: hovering)
@@ -336,12 +346,17 @@ private struct BoltButton: View {
             .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(hovering ? Color.white : Color.secondary)
             .frame(width: 22, height: 22)
-            .background(RoundedRectangle(cornerRadius: 6)
-                .fill(hovering ? Color.accentColor : Color.primary.opacity(0.1)))
-            .overlay(DropZone(onHover: { inside in
-                hovering = inside
-                if inside { shelf.showInstantActions = true }
-            }, onDrop: { shelf.add($0) }))
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(hovering ? Color.accentColor : Color.primary.opacity(0.1))
+            )
+            .overlay(
+                DropZone(
+                    onHover: { inside in
+                        hovering = inside
+                        if inside { shelf.showInstantActions = true }
+                    }, onDrop: { shelf.add($0) })
+            )
             .onTapGesture { shelf.showInstantActions = true }
             .help("Instant Actions")
     }
@@ -360,26 +375,29 @@ private struct DetailView: View {
                 LazyVStack(spacing: 1) {
                     ForEach(Array(shelf.items.enumerated()), id: \.element.id) { index, item in
                         let renaming = shelf.renamingID == item.id
-                        Row(item: item,
+                        Row(
+                            item: item,
                             image: item.kind == .link ? AppIcons.browser : thumbs.image(for: item),
                             selected: shelf.selection.contains(item.id),
                             renaming: renaming,
                             onCommit: { shelf.controller?.commitRename(item, to: $0) },
-                            onCancel: { shelf.renamingID = nil })
-                            .overlay {
-                                if !renaming {
-                                    DragSource(
-                                        items: { shelf.controller?.itemsForDrag(startingAt: item) ?? [item] },
-                                        onClick: { shelf.controller?.click(item, modifiers: $0) },
-                                        onDoubleClick: { shelf.controller?.open(item) },
-                                        menu: { shelf.controller?.menu(for: item) },
-                                        onDragEnded: { shelf.controller?.dragEnded($0, operation: $1) })
-                                }
+                            onCancel: { shelf.renamingID = nil }
+                        )
+                        .overlay {
+                            if !renaming {
+                                DragSource(
+                                    items: { shelf.controller?.itemsForDrag(startingAt: item) ?? [item] },
+                                    onClick: { shelf.controller?.click(item, modifiers: $0) },
+                                    onDoubleClick: { shelf.controller?.open(item) },
+                                    menu: { shelf.controller?.menu(for: item) },
+                                    onDragEnded: { shelf.controller?.dragEnded($0, operation: $1) })
                             }
-                            .overlay(alignment: .top) {
-                                if shelf.dropIndex == index { InsertionLine().offset(y: -1.5) }
-                            }
-                            .background(GeometryReader { geo in
+                        }
+                        .overlay(alignment: .top) {
+                            if shelf.dropIndex == index { InsertionLine().offset(y: -1.5) }
+                        }
+                        .background(
+                            GeometryReader { geo in
                                 Color.clear.preference(key: RowFramesKey.self, value: [item.id: geo.frame(in: .global)])
                             })
                     }
@@ -393,11 +411,13 @@ private struct DetailView: View {
             .background(Color.clear.contentShape(Rectangle()).onTapGesture { shelf.selection = [] })
             Divider().opacity(0.5)
             HStack {
-                Text(shelf.selection.isEmpty
-                     ? "\(shelf.items.count) item\(shelf.items.count == 1 ? "" : "s")"
-                     : "\(shelf.selection.count) of \(shelf.items.count) selected")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                Text(
+                    shelf.selection.isEmpty
+                        ? "\(shelf.items.count) item\(shelf.items.count == 1 ? "" : "s")"
+                        : "\(shelf.selection.count) of \(shelf.items.count) selected"
+                )
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
                 Spacer()
                 if let busy = shelf.busy {
                     ProgressView().controlSize(.mini)
@@ -456,8 +476,10 @@ private struct DetailView: View {
             .foregroundStyle(selected ? Color.white : Color.primary)
             .padding(.horizontal, 6)
             .padding(.vertical, 5)
-            .background(RoundedRectangle(cornerRadius: 7)
-                .fill(selected ? Color.accentColor : Color.primary.opacity(hover ? 0.06 : 0)))
+            .background(
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(selected ? Color.accentColor : Color.primary.opacity(hover ? 0.06 : 0))
+            )
             .opacity(item.exists ? 1 : 0.5)
             .onPanelHover { hover = $0 }
             .help(item.path ?? item.text ?? "")

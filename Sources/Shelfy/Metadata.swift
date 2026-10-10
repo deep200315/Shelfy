@@ -30,16 +30,19 @@ enum Metadata {
         } else {
             if let size = values?.fileSize { parts.append(sizeFormatter.string(fromByteCount: Int64(size))) }
             if item.isImage, let src = CGImageSourceCreateWithURL(url as CFURL, nil),
-               let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any],
-               let w = props[kCGImagePropertyPixelWidth] as? Int, let h = props[kCGImagePropertyPixelHeight] as? Int {
+                let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any],
+                let w = props[kCGImagePropertyPixelWidth] as? Int, let h = props[kCGImagePropertyPixelHeight] as? Int
+            {
                 parts.append("\(w) × \(h)")
             } else if item.contentType?.conforms(to: .audiovisualContent) == true,
-                      let md = MDItemCreateWithURL(nil, url as CFURL),
-                      let seconds = MDItemCopyAttribute(md, kMDItemDurationSeconds) as? Double {
+                let md = MDItemCreateWithURL(nil, url as CFURL),
+                let seconds = MDItemCopyAttribute(md, kMDItemDurationSeconds) as? Double
+            {
                 let total = Int(seconds.rounded())
-                parts.append(total >= 3600
-                    ? String(format: "%d:%02d:%02d", total / 3600, total / 60 % 60, total % 60)
-                    : String(format: "%d:%02d", total / 60, total % 60))
+                parts.append(
+                    total >= 3600
+                        ? String(format: "%d:%02d:%02d", total / 3600, total / 60 % 60, total % 60)
+                        : String(format: "%d:%02d", total / 60, total % 60))
             } else if let type = values?.localizedTypeDescription {
                 parts.append(type)
             }
