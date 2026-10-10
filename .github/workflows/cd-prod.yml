@@ -19,7 +19,7 @@ jobs:
       version: ${{ steps.gate.outputs.version }}
       release: ${{ steps.gate.outputs.release }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - id: gate
@@ -59,7 +59,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       VERSION: ${{ needs.check.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v4
         with:
           name: shelfy-build
