@@ -54,6 +54,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleShortVersionString</key><string>${MARKETING_VERSION}</string>
     <key>CFBundleVersion</key><string>${BUILD_NUMBER}</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
+    <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
     <key>LSMinimumSystemVersion</key><string>${MACOS_MIN_VERSION}</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
