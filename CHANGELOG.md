@@ -9,6 +9,8 @@ and Shelfy uses [Semantic Versioning](https://semver.org/).
 - One-command install and update: `curl -fsSL https://deep200315.github.io/Shelfy/install.sh | sh` (no "Open Anyway" step)
 ### Changed
 - Menu bar icon and Settings header use the new stacked-photos look instead of the old tray
+
+## [1.0.1] - 2026-10-10
 ### Fixed
 - Shelfy now appears under Productivity in the Apps view instead of only in search
 
