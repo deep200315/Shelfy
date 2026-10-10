@@ -120,7 +120,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        statusItem.button?.image = NSImage(systemSymbolName: "tray.and.arrow.down.fill", accessibilityDescription: "Shelfy")
+        // Stacked photos, matching the app icon; system symbols render as menu bar templates.
+        statusItem.button?.image = NSImage(systemSymbolName: "photo.stack.fill", accessibilityDescription: "Shelfy")
         let menu = NSMenu()
         menu.delegate = self
         statusItem.menu = menu
