@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shelfy — drag less. drop anywhere.</title>
+<meta name="description" content="Shelfy is a free, open-source drag-and-drop shelf for macOS. Shake while dragging and a Liquid Glass shelf appears under your pointer.">
+<meta property="og:title" content="Shelfy — drag less. drop anywhere.">
+<meta property="og:description" content="A free, open-source drag-and-drop shelf for macOS.">
+<meta property="og:image" content="icon.png">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;900&family=Geist+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    /* One hue (268, Shelfy's icon indigo) across every surface. */
+    --accent: oklch(0.66 0.17 268);
+    --accent-deep: oklch(0.55 0.2 268);
+    --ink: oklch(0.17 0.06 268);
+    --paper: oklch(0.96 0.02 268);
+    --night: oklch(0.15 0.035 268);
+    --night-2: oklch(0.21 0.045 268);
+    --on-night: oklch(0.96 0.02 268);
+    --muted-night: oklch(0.72 0.05 268);
+    --sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--accent); color: var(--ink); font: 16px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+  @media (max-width: 640px) { .wrap { padding: 0 16px; } }
+
+  .label { font: 500 11px/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+  .mono { font-family: var(--mono); }
+
+  /* Nav */
+  nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; font: 500 13px var(--mono); }
+  nav .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; text-decoration: none; }
+  nav .brand img { width: 22px; height: 22px; }
+  nav .links { display: flex; gap: 22px; }
+  nav .links a { text-decoration: none; opacity: 0.85; }
+  nav .links a:hover { opacity: 1; text-decoration: underline; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; background: var(--ink); color: var(--on-night); border-radius: 999px; padding: 5px 14px 5px 5px; font: 500 12.5px var(--mono); text-decoration: none; }
+  .pill .chip { background: var(--accent); color: var(--ink); border-radius: 999px; padding: 2px 8px; font-weight: 700; font-size: 10.5px; }
+  @media (max-width: 860px) { nav .pill { display: none; } }
+
+  /* Headlines */
+  .display { font-weight: 900; letter-spacing: -0.045em; line-height: 0.9; margin: 0; }
+  .hero h1 { font-size: clamp(56px, 9.4vw, 128px); }
+  .block { display: inline-block; background: var(--ink); color: var(--accent); font-style: italic; padding: 0 0.12em 0.06em 0.06em; margin-left: -0.04em; }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 40px; padding: 48px 0 72px; align-items: start; }
+  .hero .lede { font-size: clamp(19px, 2vw, 25px); line-height: 1.35; margin: 34px 0 34px; max-width: 30ch; font-weight: 450; }
+  .hero .lede b { font-weight: 700; }
+  @media (max-width: 960px) { .hero { grid-template-columns: 1fr; } }
+
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; background: var(--ink); color: var(--on-night); text-decoration: none; padding: 15px 22px; border-radius: 12px; font: 600 16px var(--sans); }
+  .btn:hover { background: oklch(0.24 0.07 268); }
+  .btn .sub { font: 500 12px var(--mono); opacity: 0.65; }
+  .btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+  .btn.ghost:hover { background: oklch(0.17 0.06 268 / 0.08); }
+  .note { margin-top: 16px; font: 12px var(--mono); opacity: 0.8; }
+
+  /* Code blocks */
+  .code { position: relative; background: var(--ink); color: var(--on-night); border-radius: 12px; padding: 16px 70px 16px 18px; font: 14px/1.6 var(--mono); overflow-x: auto; }
+  .code .p { color: var(--accent); user-select: none; }
+  .copy { position: absolute; top: 10px; right: 10px; background: oklch(1 0 0 / 0.08); color: var(--muted-night); border: 0; border-radius: 7px; padding: 5px 9px; font: 500 10.5px var(--mono); letter-spacing: 0.06em; cursor: pointer; text-transform: uppercase; }
+  .copy:hover { background: oklch(1 0 0 / 0.16); color: var(--on-night); }
+
+  /* Shelf mock */
+  .stage { position: relative; display: flex; flex-direction: column; align-items: center; gap: 22px; padding-top: 18px; }
+  .shelf {
+    width: min(340px, 100%); aspect-ratio: 1 / 1.02; border-radius: 30px; transform: rotate(3deg);
+    background: oklch(0.2 0.05 268 / 0.88); color: var(--on-night);
+    box-shadow: 0 30px 60px -20px oklch(0.17 0.06 268 / 0.55), inset 0 0 0 1px oklch(1 0 0 / 0.14);
+    display: grid; grid-template-rows: auto 1fr auto; padding: 14px; backdrop-filter: blur(20px);
+  }
+  .shelf .bar { display: flex; justify-content: space-between; align-items: center; }
+  .shelf .dot { width: 26px; height: 26px; border-radius: 50%; background: oklch(1 0 0 / 0.12); display: grid; place-items: center; font: 700 12px var(--sans); color: var(--muted-night); }
+  .shelf .grab { width: 34px; height: 5px; border-radius: 3px; background: oklch(1 0 0 / 0.2); }
+  .pile { position: relative; display: grid; place-items: center; }
+  .card {
+    position: absolute; width: 46%; aspect-ratio: 4 / 3; border: 5px solid #fff; border-radius: 3px;
+    box-shadow: 0 6px 14px oklch(0 0 0 / 0.35);
+  }
+  .card.c1 { background: linear-gradient(160deg, oklch(0.78 0.12 220), oklch(0.5 0.12 250)); transform: rotate(-9deg) translate(-12px, 4px); }
+  .card.c2 { background: linear-gradient(160deg, oklch(0.85 0.13 85), oklch(0.62 0.16 40)); transform: rotate(7deg) translate(12px, -2px); }
+  .card.c3 { background: linear-gradient(160deg, oklch(0.8 0.1 150), oklch(0.5 0.12 170)); animation: drop 4.8s cubic-bezier(.2,.9,.25,1) infinite; }
+  @keyframes drop {
+    0%, 12% { transform: translate(90px, -170px) rotate(18deg) scale(1.08); opacity: 0; }
+    22% { opacity: 1; }
+    40%, 88% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+    100% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0; }
+  }
+  .shelf .count { justify-self: center; background: oklch(1 0 0 / 0.12); border-radius: 999px; padding: 5px 12px; font: 600 13px var(--sans); }
+  .shelf .count span { opacity: 0.6; margin-left: 4px; }
+  .cursor { position: absolute; top: 0; right: 14%; width: 26px; animation: shake 4.8s ease-in-out infinite; pointer-events: none; }
+  @keyframes shake {
+    0% { transform: translate(0, 0); } 3% { transform: translate(-16px, 0); } 6% { transform: translate(14px, 0); }
+    9% { transform: translate(-14px, 0); } 12% { transform: translate(0, 0); } 100% { transform: translate(0, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .card.c3, .cursor { animation: none; } }
+
+  .free { background: var(--paper); color: var(--ink); border-radius: 16px; padding: 18px 20px; width: min(340px, 100%); transform: rotate(-1.5deg); box-shadow: 0 18px 40px -18px oklch(0.17 0.06 268 / 0.5); }
+  .free h3 { margin: 0 0 6px; font-size: 21px; font-weight: 800; letter-spacing: -0.02em; }
+  .free h3 .block { font-size: 0.95em; }
+  .free p { margin: 0 0 12px; font-size: 14.5px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips span { border: 1.5px solid var(--ink); border-radius: 999px; padding: 3px 9px; font: 700 10.5px var(--mono); letter-spacing: 0.04em; }
+
+  /* Sections */
+  section { padding: 96px 0; }
+  .paper { background: var(--paper); }
+  .night { background: var(--night); color: var(--on-night); }
+  .section-head { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 32px; align-items: end; margin-bottom: 56px; }
+  .section-head h2 { font-size: clamp(44px, 7vw, 92px); }
+  .section-head p { margin: 0; font-size: 16px; max-width: 36ch; justify-self: end; }
+  @media (max-width: 860px) { .section-head { grid-template-columns: 1fr; } .section-head p { justify-self: start; } }
+  .night .block { background: var(--accent); color: var(--night); }
+
+  .features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 2px solid var(--ink); }
+  .feature { padding: 26px 26px 30px 0; border-bottom: 2px solid var(--ink); }
+  .feature + .feature { padding-left: 26px; }
+  .features .feature:nth-child(3n + 1) { padding-left: 0; }
+  .features .feature:not(:nth-child(3n + 1)) { border-left: 2px solid var(--ink); }
+  .feature .n { color: var(--accent-deep); }
+  .feature h3 { font-size: 24px; letter-spacing: -0.025em; margin: 10px 0 8px; font-weight: 800; }
+  .feature p { margin: 0; font-size: 15.5px; opacity: 0.85; }
+  @media (max-width: 860px) {
+    .features { grid-template-columns: 1fr; }
+    .feature, .feature + .feature, .features .feature:nth-child(3n + 1) { padding: 22px 0; border-left: 0 !important; }
+  }
+
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .step { background: var(--night-2); border-radius: 18px; padding: 26px; box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.07); }
+  .step .n { color: var(--accent); }
+  .step h3 { font-size: 26px; letter-spacing: -0.03em; margin: 12px 0 8px; font-weight: 800; }
+  .step p { margin: 0; color: var(--muted-night); font-size: 15.5px; }
+  @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
+
+  .keys { margin-top: 56px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .key { border-top: 1px solid oklch(1 0 0 / 0.14); padding-top: 14px; }
+  .key kbd { font: 700 22px var(--mono); color: var(--on-night); }
+  .key div { color: var(--muted-night); font-size: 14px; margin-top: 4px; }
+  @media (max-width: 860px) { .keys { grid-template-columns: 1fr 1fr; } }
+
+  .outro { padding: 110px 0 40px; }
+  .outro h2 { font-size: clamp(64px, 12vw, 168px); }
+  .outro-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 40px; margin-top: 48px; align-items: start; }
+  .outro-grid > p { margin: 0; font-size: 17px; max-width: 34ch; }
+  .stack { display: grid; gap: 8px; }
+  .stack .label { margin-top: 10px; }
+  @media (max-width: 860px) { .outro-grid { grid-template-columns: 1fr; } }
+  footer { border-top: 1.5px solid oklch(0.17 0.06 268 / 0.4); margin-top: 72px; padding: 22px 0 0; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font: 12px var(--mono); }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <nav>
+    <a class="brand" href="#top"><img src="icon.png" alt="">shelfy</a>
+    <a class="pill" href="#download"><span class="chip">NEW</span><span id="pill-text">v1.0 · free &amp; open source</span> ↓</a>
+    <div class="links">
+      <a href="#features">features</a>
+      <a href="#how">how it works</a>
+      <a href="https://github.com/deep200315/Shelfy">github</a>
+    </div>
+  </nav>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <div>
+      <h1 class="display">drag less.<br>drop <span class="block">anywhere.</span></h1>
+      <p class="lede">A free, open-source shelf for macOS. <b>Shake while dragging</b> and a Liquid Glass shelf appears under your pointer. Collect from anywhere, drop it all at once.</p>
+      <div class="cta-row" id="download">
+        <a class="btn" id="dl" href="https://github.com/deep200315/Shelfy/releases/latest/download/Shelfy.dmg">Download for Mac <span class="sub" id="dl-ver">.dmg</span></a>
+        <a class="btn ghost" href="https://github.com/deep200315/Shelfy">View source</a>
+      </div>
+      <p class="note">macOS 14 or later · Apple silicon &amp; Intel · first launch: right-click → Open</p>
+    </div>
+
+    <div class="stage" aria-hidden="true">
+      <div class="shelf">
+        <div class="bar"><span class="dot">✕</span><span class="grab"></span><span class="dot">•••</span></div>
+        <div class="pile"><div class="card c1"></div><div class="card c2"></div><div class="card c3"></div></div>
+        <div class="count">3 images<span>⌄</span></div>
+      </div>
+      <svg class="cursor" viewBox="0 0 24 24"><path d="M5 2l14 12-6.2.6 3.8 7.2-2.8 1.4-3.7-7.3L5 20z" fill="#fff" stroke="oklch(0.17 0.06 268)" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      <div class="free">
+        <h3>it's free. <span class="block">for real.</span></h3>
+        <p>No account, no subscription, no tracking. Your files never leave your Mac.</p>
+        <div class="chips"><span>NO ACCOUNT</span><span>NO TRACKING</span><span>MIT LICENSE</span></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="paper" id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 class="display">everything you need.<br><span class="block">nothing</span> you don't.</h2>
+        <p>Built natively in Swift with AppKit and SwiftUI. It feels like part of macOS because it is.</p>
+      </div>
+      <div class="features">
+        <div class="feature"><span class="label n">01 · summon</span><h3>Shake to open</h3><p>Wiggle the pointer mid-drag, press ⌃⌥D, or drop onto the menu bar icon or the MacBook notch.</p></div>
+        <div class="feature"><span class="label n">02 · move</span><h3>Drop it all at once</h3><p>Drag the pile to move everything, or open the list to reorder, rename, and drag single files out.</p></div>
+        <div class="feature"><span class="label n">03 · act</span><h3>Instant Actions</h3><p>Drop straight onto AirDrop, Messages, Mail, or Compress without collecting first.</p></div>
+        <div class="feature"><span class="label n">04 · smart</span><h3>Suggested actions</h3><p>Stitch images, make a PDF, merge PDFs, turn a video into a GIF, or shrink it, based on what's on the shelf.</p></div>
+        <div class="feature"><span class="label n">05 · search</span><h3>Command Bar</h3><p>Press ⌘K and type. Every action, including your Shortcuts and custom scripts, is a few letters away.</p></div>
+        <div class="feature"><span class="label n">06 · remember</span><h3>Clipboard history</h3><p>Your last 60 copies on a shelf. Anything a password manager marks as private is never recorded.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="night" id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 class="display">three moves.<br>that's <span class="block">it.</span></h2>
+        <p>No setup and no windows to manage. The shelf appears when you need it and stays out of the way when you don't.</p>
+      </div>
+      <div class="steps">
+        <div class="step"><span class="label n">01</span><h3>Drag &amp; shake</h3><p>Start dragging anything (files, images, links, text) and give the pointer a quick shake.</p></div>
+        <div class="step"><span class="label n">02</span><h3>Collect</h3><p>Drop it on the shelf. Switch apps, open folders, add more. Dock the shelf to a screen edge if you like.</p></div>
+        <div class="step"><span class="label n">03</span><h3>Drop everything</h3><p>Drag the pile to where it belongs, or share, compress, or convert it from the ••• menu.</p></div>
+      </div>
+      <div class="keys">
+        <div class="key"><kbd>⌃⌥D</kbd><div>New shelf at the pointer</div></div>
+        <div class="key"><kbd>⌘K</kbd><div>Command Bar on a shelf</div></div>
+        <div class="key"><kbd>⌃⌥V</kbd><div>Clipboard history</div></div>
+        <div class="key"><kbd>space</kbd><div>Quick Look</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="outro">
+    <div class="wrap">
+      <h2 class="display">now go <span class="block">drop.</span></h2>
+      <div class="outro-grid">
+        <p>Download the app, or build it yourself: it's a plain Swift package with no dependencies. Every release is built, tested, and packaged in the open by GitHub Actions.</p>
+        <div class="stack">
+          <span class="label">download</span>
+          <div class="cta-row"><a class="btn" href="https://github.com/deep200315/Shelfy/releases/latest/download/Shelfy.dmg">Download Shelfy.dmg</a></div>
+          <span class="label">build from source</span>
+          <div class="code"><button class="copy" type="button">copy</button><span class="p">$ </span>git clone https://github.com/deep200315/Shelfy.git<br><span class="p">$ </span>cd Shelfy &amp;&amp; ./build.sh &amp;&amp; open build/Shelfy.app</div>
+          <span class="label">latest work in progress</span>
+          <div class="code"><button class="copy" type="button">copy</button><span class="p">$ </span>gh release download dev --repo deep200315/Shelfy --pattern '*.dmg'</div>
+        </div>
+      </div>
+      <footer>
+        <span>made with Swift · MIT license · © 2026 Deeptanush Kapaka</span>
+        <span><a href="https://github.com/deep200315/Shelfy/releases">releases</a> · <a href="https://github.com/deep200315/Shelfy/blob/main/CHANGELOG.md">changelog</a> · <a href="https://github.com/deep200315/Shelfy">github</a></span>
+      </footer>
+    </div>
+  </section>
+</main>
+
+<script>
+  // Copy buttons copy the command text without the "$ " prompts.
+  document.querySelectorAll(".copy").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const block = button.parentElement.cloneNode(true);
+      block.querySelectorAll(".copy, .p").forEach((n) => n.remove());
+      try {
+        await navigator.clipboard.writeText(block.innerText.trim());
+        button.textContent = "copied";
+        setTimeout(() => (button.textContent = "copy"), 1500);
+      } catch { button.textContent = "select it"; }
+    });
+  });
+
+  // Show the real latest version when the GitHub API is reachable; the page works without it.
+  fetch("https://api.github.com/repos/deep200315/Shelfy/releases/latest")
+    .then((r) => (r.ok ? r.json() : Promise.reject()))
+    .then((release) => {
+      const version = release.tag_name;
+      document.getElementById("pill-text").textContent = `${version} · free & open source`;
+      document.getElementById("dl-ver").textContent = `${version} · .dmg`;
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>

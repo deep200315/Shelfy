@@ -1,23 +1,14 @@
-# Release dashboard on GitHub Pages: rebuilt from live GitHub data after every pipeline run,
-# on releases, and every 6 hours. Data is gathered at build time so the page is static.
-name: Dashboard
+# Publishes the Shelfy website (site/) to GitHub Pages whenever it changes on main.
+name: Website
 
 on:
   push:
     branches: [main]
-  workflow_run:
-    workflows: [CI, Deploy DEV, Deploy PROD, Rollback PROD]
-    types: [completed]
-  release:
-    types: [published, edited, deleted]
-  schedule:
-    - cron: "17 */6 * * *"
+    paths: [site/**, .github/workflows/pages.yml]
   workflow_dispatch:
 
 permissions:
   contents: read
-  actions: read
-  pull-requests: read
   pages: write
   id-token: write
 
@@ -26,26 +17,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: develop   # "Unreleased" changes and the test count come from the integration branch
-      - name: Collect data
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: python3 scripts/dashboard_data.py
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dashboard
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
       - id: deployment
         uses: actions/deploy-pages@v4
