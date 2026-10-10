@@ -1,15 +1,21 @@
-# Quality gates for every pull request and every push to main.
-# Lint → build (warnings are errors) → tests → package a universal app (downloadable preview build).
+# Quality gates: lint → build (warnings are errors) → tests → package (.app → DMG + zip).
+# Runs on every pull request into develop or main, and is reused by the deploy workflows
+# so DEV and PROD builds pass exactly the same gates.
 name: CI
 
 on:
   pull_request:
-    branches: [main]
-  push:
-    branches: [main]
+    branches: [develop, main]
+  workflow_dispatch:   # lets automation run CI on a branch it created (e.g. release/vX.Y.Z)
+  workflow_call:
+    inputs:
+      version:
+        description: "Version to stamp into the app (default: latest tag, else version.env)"
+        type: string
+        default: ""
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -24,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # tags + full history: the version comes from the latest tag
+          fetch-depth: 0   # tags + full history: version and build number come from git
 
       - name: Toolchain
         run: |
@@ -41,6 +47,8 @@ jobs:
         run: swift test
 
       - name: Package universal app
+        env:
+          VERSION: ${{ inputs.version }}
         run: ARCHES="arm64 x86_64" scripts/package_app.sh release
 
       - name: Verify bundle
@@ -49,11 +57,13 @@ jobs:
           codesign --verify --strict --verbose=2 build/Shelfy.app
           plutil -lint build/Shelfy.app/Contents/Info.plist
 
-      - name: Zip preview build
-        run: ditto -c -k --keepParent build/Shelfy.app "Shelfy-${GITHUB_SHA::7}.zip"
+      - name: Make DMG and zip
+        run: scripts/make_dmg.sh
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Shelfy-preview-${{ github.sha }}
-          path: Shelfy-*.zip
+          name: shelfy-build
+          path: |
+            build/Shelfy-*.dmg
+            build/Shelfy-*.zip
           retention-days: 14

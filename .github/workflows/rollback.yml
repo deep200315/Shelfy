@@ -1,0 +1,30 @@
+# Roll back production: make an earlier release "Latest" again and demote the bad one to a
+# pre-release, so downloads go to the good version. Follow up with a hotfix/* PR into main.
+name: Rollback PROD
+
+on:
+  workflow_dispatch:
+    inputs:
+      bad_version:
+        description: Version to pull back, e.g. 1.1.0
+        required: true
+      good_version:
+        description: Version to restore as Latest, e.g. 1.0.0
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - run: |
+          gh release view "v${{ inputs.good_version }}" --repo "$GITHUB_REPOSITORY" >/dev/null
+          gh release edit "v${{ inputs.good_version }}" --repo "$GITHUB_REPOSITORY" --latest
+          gh release edit "v${{ inputs.bad_version }}" --repo "$GITHUB_REPOSITORY" --prerelease \
+            --notes "⚠️ Pulled back: use v${{ inputs.good_version }} until a fix ships."
+          echo "Latest is now v${{ inputs.good_version }}; v${{ inputs.bad_version }} is demoted."
