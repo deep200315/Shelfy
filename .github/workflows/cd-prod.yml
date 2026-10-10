@@ -75,7 +75,9 @@ jobs:
           cat notes.md
       - name: Tag and publish
         run: |
-          gh release create "v$VERSION" dist/Shelfy-*.dmg dist/Shelfy-*.zip \
+          # A fixed-name copy keeps releases/latest/download/Shelfy.dmg working for the website.
+          cp dist/Shelfy-*.dmg dist/Shelfy.dmg
+          gh release create "v$VERSION" dist/Shelfy-*.dmg dist/Shelfy.dmg dist/Shelfy-*.zip \
             --target "$GITHUB_SHA" \
             --title "Shelfy $VERSION" \
             --notes-file notes.md \
