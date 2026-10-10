@@ -57,4 +57,4 @@ jobs:
             --title "Dev build $VERSION" \
             --notes "Automatic build of \`develop\` at ${GITHUB_SHA::7}. Not for general use. Unreleased changes are listed under **Unreleased** in CHANGELOG.md.
 
-          First launch: right-click Shelfy.app → **Open** (the build is ad-hoc signed)."
+          First launch: open Shelfy once, then System Settings → Privacy & Security → **Open Anyway** (dev builds aren't notarized). Shelfy lives in the menu bar."

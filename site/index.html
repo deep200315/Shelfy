@@ -156,6 +156,7 @@
   .outro-grid > p { margin: 0; font-size: 17px; max-width: 34ch; }
   .stack { display: grid; gap: 8px; }
   .stack .label { margin-top: 10px; }
+  .install-steps { margin: 0; padding-left: 20px; font-size: 15px; display: grid; gap: 4px; }
   @media (max-width: 860px) { .outro-grid { grid-template-columns: 1fr; } }
   footer { border-top: 1.5px solid oklch(0.17 0.06 268 / 0.4); margin-top: 72px; padding: 22px 0 0; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font: 12px var(--mono); }
 </style>
@@ -183,7 +184,7 @@
         <a class="btn" id="dl" href="https://github.com/deep200315/Shelfy/releases/latest/download/Shelfy.dmg">Download for Mac <span class="sub" id="dl-ver">.dmg</span></a>
         <a class="btn ghost" href="https://github.com/deep200315/Shelfy">View source</a>
       </div>
-      <p class="note">macOS 14 or later · Apple silicon &amp; Intel · first launch: right-click → Open</p>
+      <p class="note">macOS 14 or later · Apple silicon &amp; Intel · lives in your menu bar · <a href="#install">first-launch steps</a></p>
     </div>
 
     <div class="stage" aria-hidden="true">
@@ -246,6 +247,13 @@
         <div class="stack">
           <span class="label">download</span>
           <div class="cta-row"><a class="btn" href="https://github.com/deep200315/Shelfy/releases/latest/download/Shelfy.dmg">Download Shelfy.dmg</a></div>
+          <span class="label" id="install">first launch</span>
+          <ol class="install-steps">
+            <li>Open <b>Shelfy.dmg</b> and drag Shelfy into Applications.</li>
+            <li>Open Shelfy. macOS blocks it the first time, because free builds aren't notarized by Apple.</li>
+            <li>Go to <b>System Settings → Privacy &amp; Security</b>, scroll down, and click <b>Open Anyway</b>.</li>
+            <li>Look for the tray icon in your menu bar. Shelfy has no Dock icon or window.</li>
+          </ol>
           <span class="label">build from source</span>
           <div class="code"><button class="copy" type="button">copy</button><span class="p">$ </span>git clone https://github.com/deep200315/Shelfy.git<br><span class="p">$ </span>cd Shelfy &amp;&amp; ./build.sh &amp;&amp; open build/Shelfy.app</div>
           <span class="label">latest work in progress</span>
