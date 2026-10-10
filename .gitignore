@@ -1,0 +1,11 @@
+.build/
+build/
+.swiftpm/
+*.xcodeproj/
+xcuserdata/
+DerivedData/
+.DS_Store
+*.p8
+*.p12
+*.cer
+*.mobileprovision
